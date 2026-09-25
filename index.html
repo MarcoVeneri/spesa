@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Spesa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=12">
+<link rel="stylesheet" href="styles.css?v=13">
 <title>Spesa</title>
 </head>
 <body>
@@ -35,11 +35,11 @@
   <section id="main" hidden>
     <div class="glass addBox">
       <input id="itemInput" placeholder="Cosa serve?" autocomplete="off" enterkeyhint="done">
-      <button id="trashBtn" class="trashTop" type="button" aria-label="Recupera articoli eliminati">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/></svg>
-      </button>
       <button id="addBtn" type="button" aria-label="Aggiungi">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button id="trashBtn" class="trashTop" type="button" aria-label="Recupera articoli eliminati">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/></svg>
       </button>
     </div>
 
@@ -68,6 +68,6 @@
 </div>
 <div class="doneOverlay" id="doneOverlay" aria-hidden="true"><div class="doneCheck">✓</div></div>
 <div class="toast" id="toast"></div>
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>
