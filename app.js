@@ -89,17 +89,37 @@ async function add(){
     toast('Non riesco ad aggiungere');
   }
 }
-function haptic(){
+let audioCtx=null;
+function feedback(){
   try{
     if(typeof navigator.vibrate==='function') navigator.vibrate(8);
+  }catch{}
+  try{
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx)return;
+    if(!audioCtx) audioCtx=new Ctx();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const now=audioCtx.currentTime;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(980,now);
+    osc.frequency.exponentialRampToValueAtTime(720,now+.032);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.exponentialRampToValueAtTime(.055,now+.004);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+.038);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now+.042);
   }catch{}
 }
 async function del(id,el){
   if(!id||!el||el.classList.contains('removing'))return;
   const previous=items.slice();
-  haptic();
+  feedback();
   el.classList.add('removing');
-  await new Promise(resolve=>setTimeout(resolve,210));
+  await new Promise(resolve=>setTimeout(resolve,320));
   items=items.filter(x=>x.id!==id);
   render();
   localStorage.setItem(LS_CACHE,JSON.stringify(items));
