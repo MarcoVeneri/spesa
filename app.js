@@ -41,12 +41,9 @@ function saveTrash(list){
   renderTrashBadge();
 }
 function renderTrashBadge(){
-  const b=$('#trashBadge'),btn=$('#trashBtn');
-  if(!b||!btn)return;
-  const n=trashCached().length;
-  b.textContent=n;
-  b.hidden=!n;
-  btn.classList.toggle('active',!!n);
+  const btn=$('#trashBtn');
+  if(!btn)return;
+  btn.classList.toggle('active',trashCached().length>0);
 }
 function renderTrash(){
   const list=trashCached();
@@ -64,6 +61,11 @@ function openTrash(){
 function closeTrash(){
   $('#trashModal').classList.remove('open');
   $('#trashModal').setAttribute('aria-hidden','true');
+}
+function clearTrash(){
+  saveTrash([]);
+  renderTrash();
+  toast('Cestino svuotato');
 }
 function row(x){
   return '<div class="item" data-id="'+x.id+'" role="button" tabindex="0" aria-label="Elimina '+esc(x.name)+'">'+
@@ -219,6 +221,7 @@ async function share(){
 $('#addBtn').onclick=add;
 $('#trashBtn').onclick=openTrash;
 $('#trashClose').onclick=closeTrash;
+$('#trashClear').onclick=clearTrash;
 $('#trashModal').addEventListener('click',e=>{if(e.target===$('#trashModal'))closeTrash()});
 $('#trashList').addEventListener('click',e=>{
   const b=e.target.closest('.restoreBtn');
