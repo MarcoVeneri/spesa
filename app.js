@@ -1,6 +1,6 @@
 const API='https://nlhxjpartgvplythgzrz.supabase.co';
 const KEY='sb_publishable_uA9EbSMwJ5oFraqP-r5njg_EXtLSjEH';
-const LS_TOKEN='spesa_shared_token',LS_CACHE='spesa_items_cache';
+const LS_TOKEN='spesa_shared_token',LS_CACHE='spesa_items_cache',LS_TRASH='spesa_trash_cache';
 let token='',items=[],loading=false;
 const $=s=>document.querySelector(s);
 
@@ -32,6 +32,38 @@ function ingestHash(){
 }
 function cached(){
   try{return JSON.parse(localStorage.getItem(LS_CACHE)||'[]')}catch{return[]}
+}
+function trashCached(){
+  try{return JSON.parse(localStorage.getItem(LS_TRASH)||'[]')}catch{return[]}
+}
+function saveTrash(list){
+  localStorage.setItem(LS_TRASH,JSON.stringify(list.slice(0,30)));
+  renderTrashBadge();
+}
+function renderTrashBadge(){
+  const b=$('#trashBadge'),btn=$('#trashBtn');
+  if(!b||!btn)return;
+  const n=trashCached().length;
+  b.textContent=n;
+  b.hidden=!n;
+  btn.classList.toggle('active',!!n);
+}
+function renderTrash(){
+  const list=trashCached();
+  const box=$('#trashList');
+  if(!box)return;
+  box.innerHTML=list.length?list.map((x,i)=>
+    '<div class="trashRow" data-index="'+i+'"><div class="trashName">'+esc(x.name)+'</div><button class="restoreBtn" type="button">Recupera</button></div>'
+  ).join(''):'<div class="trashEmpty">Nessun articolo da recuperare.</div>';
+}
+function openTrash(){
+  renderTrash();
+  $('#trashModal').classList.add('open');
+  $('#trashModal').setAttribute('aria-hidden','false');
+}
+function closeTrash(){
+  $('#trashModal').classList.remove('open');
+  $('#trashModal').setAttribute('aria-hidden','true');
 }
 function row(x){
   return '<div class="item" data-id="'+x.id+'" role="button" tabindex="0" aria-label="Elimina '+esc(x.name)+'">'+
@@ -134,6 +166,7 @@ function feedback(){
 async function del(id,el){
   if(!id||!el||el.classList.contains('removing'))return;
   const previous=items.slice();
+  const removed=items.find(x=>x.id===id);
   feedback();
   el.classList.add('removing');
   await new Promise(resolve=>setTimeout(resolve,320));
@@ -142,11 +175,31 @@ async function del(id,el){
   localStorage.setItem(LS_CACHE,JSON.stringify(items));
   try{
     await rpc('shopping_delete_item',{p_token:token,p_item_id:id});
+    if(removed){
+      const t=trashCached();
+      t.unshift({name:removed.name,deletedAt:Date.now()});
+      saveTrash(t);
+    }
   }catch{
     items=previous;
     render();
     localStorage.setItem(LS_CACHE,JSON.stringify(items));
     toast('Eliminazione non salvata');
+  }
+}
+async function restoreTrash(index){
+  const t=trashCached();
+  const x=t[index];
+  if(!x)return;
+  try{
+    await rpc('shopping_add_item',{p_token:token,p_name:x.name,p_quantity:null,p_category:'Altro'});
+    t.splice(index,1);
+    saveTrash(t);
+    renderTrash();
+    await refresh(true);
+    toast('Articolo recuperato');
+  }catch{
+    toast('Recupero non riuscito');
   }
 }
 async function share(){
@@ -164,6 +217,15 @@ async function share(){
 }
 
 $('#addBtn').onclick=add;
+$('#trashBtn').onclick=openTrash;
+$('#trashClose').onclick=closeTrash;
+$('#trashModal').addEventListener('click',e=>{if(e.target===$('#trashModal'))closeTrash()});
+$('#trashList').addEventListener('click',e=>{
+  const b=e.target.closest('.restoreBtn');
+  if(!b)return;
+  const row=b.closest('.trashRow');
+  if(row)restoreTrash(Number(row.dataset.index));
+});
 $('#itemInput').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
 $('#shareBtn').onclick=share;
 $('#saveCode').onclick=()=>{
@@ -193,5 +255,6 @@ if('serviceWorker'in navigator){
 ingestHash();
 items=cached();
 render();
+renderTrashBadge();
 if(token)refresh();
 setInterval(()=>{if(!document.hidden)refresh(true)},5000);
