@@ -64,21 +64,38 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
  box-shadow:0 20px 52px rgba(36,60,103,.10);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
 }
 .item{
- display:flex;align-items:center;min-height:65px;padding:0 17px;
+ display:flex;align-items:center;min-height:65px;padding:0 17px;position:relative;
  border-bottom:1px solid var(--line);cursor:pointer;overflow:hidden;
  transition:transform .12s ease,background .16s ease,opacity .16s ease;
- transform-origin:center;will-change:transform,opacity;
+ transform-origin:center;will-change:transform,opacity,height;
 }
 .item:last-child{border-bottom:0}
-.itemName{min-width:0;width:100%;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.itemName{min-width:0;width:100%;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .12s ease,transform .16s ease}
+.item:after{
+ content:"✓";position:absolute;right:18px;top:50%;width:30px;height:30px;border-radius:50%;
+ display:grid;place-items:center;background:linear-gradient(145deg,var(--green),var(--green2));color:#fff;
+ font-size:18px;font-weight:800;opacity:0;transform:translateY(-50%) scale(.55);box-shadow:0 8px 18px rgba(17,168,90,.25);
+}
 .item.removing{
  pointer-events:none;
- animation:itemDone .21s cubic-bezier(.22,.8,.32,1) forwards;
+ animation:itemDone .32s cubic-bezier(.22,.8,.32,1) forwards;
+}
+.item.removing .itemName{animation:itemTextDone .18s ease forwards}
+.item.removing:after{animation:itemCheck .22s cubic-bezier(.2,.9,.2,1) forwards}
+@keyframes itemCheck{
+ 0%{opacity:0;transform:translateY(-50%) scale(.55)}
+ 55%{opacity:1;transform:translateY(-50%) scale(1.12)}
+ 100%{opacity:1;transform:translateY(-50%) scale(1)}
+}
+@keyframes itemTextDone{
+ 0%{opacity:1;transform:translateX(0)}
+ 100%{opacity:.28;transform:translateX(5px)}
 }
 @keyframes itemDone{
- 0%{opacity:1;transform:translateX(0) scale(1);background:transparent}
- 35%{opacity:1;transform:translateX(2px) scale(.985);background:rgba(47,200,111,.14)}
- 100%{opacity:0;transform:translateX(30px) scale(.96);background:rgba(47,200,111,.06)}
+ 0%{min-height:65px;height:65px;opacity:1;transform:scale(1);background:transparent;padding-top:0;padding-bottom:0}
+ 40%{min-height:65px;height:65px;opacity:1;transform:scale(.985);background:rgba(47,200,111,.14);padding-top:0;padding-bottom:0}
+ 70%{min-height:65px;height:65px;opacity:1;transform:scale(.99);background:rgba(47,200,111,.08);padding-top:0;padding-bottom:0}
+ 100%{min-height:0;height:0;opacity:0;transform:scale(.98);background:rgba(47,200,111,.04);padding-top:0;padding-bottom:0;border-bottom-width:0}
 }
 .empty{
  text-align:center;padding:48px 18px;border-radius:24px;color:var(--muted);
