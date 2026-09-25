@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f5f5f7">
+<meta name="theme-color" content="#f3f7ff">
+<meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Spesa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -14,26 +15,36 @@
 </head>
 <body>
 <main class="app">
-  <div class="top"><h1>Spesa</h1><span class="status" id="status">Condivisa</span></div>
-  <section id="setup" class="card setup" hidden>
+  <header class="top">
+    <div>
+      <div class="eyebrow">LISTA CONDIVISA</div>
+      <h1>Spesa</h1>
+    </div>
+    <button id="shareBtn" class="shareBtn" type="button" aria-label="Condividi lista">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 11v8h14v-8"/></svg>
+    </button>
+  </header>
+
+  <section id="setup" class="glass setup" hidden>
     <h2>Collega la lista</h2>
-    <p>Apri il link condiviso oppure incolla qui il codice della lista.</p>
+    <p>Inserisci il codice condiviso una sola volta su questo dispositivo.</p>
     <input id="codeInput" placeholder="Codice lista" autocomplete="off">
     <button id="saveCode">Collega</button>
   </section>
+
   <section id="main" hidden>
-    <div class="card add">
-      <input id="itemInput" placeholder="Aggiungi prodotto…" autocomplete="off">
-      <input id="qtyInput" placeholder="Qtà" autocomplete="off">
-      <button id="addBtn" aria-label="Aggiungi">+</button>
+    <div class="glass addBox">
+      <input id="itemInput" placeholder="Cosa serve?" autocomplete="off" enterkeyhint="done">
+      <button id="addBtn" type="button" aria-label="Aggiungi">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
     </div>
-    <div class="toolbar">
-      <div class="count" id="count">0 da prendere</div>
-      <div class="actions">
-        <button class="smallbtn" id="shareBtn">Condividi</button>
-        <button class="smallbtn" id="clearBtn">Pulisci</button>
-      </div>
+
+    <div class="listHead">
+      <span id="count">0 articoli</span>
+      <span id="status" class="status">Sincronizzata</span>
     </div>
+
     <div id="content"></div>
   </section>
 </main>
