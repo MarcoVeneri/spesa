@@ -97,6 +97,24 @@ function showDoneOverlay(){
   void o.offsetWidth;
   o.classList.add('show');
 }
+function emitTick(){
+  try{
+    if(!audioCtx||audioCtx.state!=='running')return;
+    const now=audioCtx.currentTime;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.type='triangle';
+    osc.frequency.setValueAtTime(1350,now);
+    osc.frequency.exponentialRampToValueAtTime(820,now+.055);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.exponentialRampToValueAtTime(.11,now+.005);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+.07);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now+.075);
+  }catch{}
+}
 function feedback(){
   showDoneOverlay();
   try{
@@ -106,20 +124,11 @@ function feedback(){
     const Ctx=window.AudioContext||window.webkitAudioContext;
     if(!Ctx)return;
     if(!audioCtx) audioCtx=new Ctx();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    const now=audioCtx.currentTime;
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-    osc.type='sine';
-    osc.frequency.setValueAtTime(980,now);
-    osc.frequency.exponentialRampToValueAtTime(720,now+.032);
-    gain.gain.setValueAtTime(.0001,now);
-    gain.gain.exponentialRampToValueAtTime(.055,now+.004);
-    gain.gain.exponentialRampToValueAtTime(.0001,now+.038);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now+.042);
+    if(audioCtx.state==='suspended'){
+      audioCtx.resume().then(emitTick).catch(()=>{});
+    }else{
+      emitTick();
+    }
   }catch{}
 }
 async function del(id,el){
