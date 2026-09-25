@@ -36,9 +36,6 @@ function cached(){
 function row(x){
   return '<div class="item" data-id="'+x.id+'" role="button" tabindex="0" aria-label="Elimina '+esc(x.name)+'">'+
     '<div class="itemName">'+esc(x.name)+'</div>'+
-    '<button class="trash" type="button" aria-label="Elimina">'+
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/><path d="M10 11v5M14 11v5"/></svg>'+
-    '</button>'+
   '</div>';
 }
 function emptyState(){
@@ -92,16 +89,26 @@ async function add(){
     toast('Non riesco ad aggiungere');
   }
 }
-async function del(id){
-  const previous=items;
+function haptic(){
+  try{
+    if(typeof navigator.vibrate==='function') navigator.vibrate(8);
+  }catch{}
+}
+async function del(id,el){
+  if(!id||!el||el.classList.contains('removing'))return;
+  const previous=items.slice();
+  haptic();
+  el.classList.add('removing');
+  await new Promise(resolve=>setTimeout(resolve,210));
   items=items.filter(x=>x.id!==id);
   render();
+  localStorage.setItem(LS_CACHE,JSON.stringify(items));
   try{
     await rpc('shopping_delete_item',{p_token:token,p_item_id:id});
-    localStorage.setItem(LS_CACHE,JSON.stringify(items));
   }catch{
     items=previous;
     render();
+    localStorage.setItem(LS_CACHE,JSON.stringify(items));
     toast('Eliminazione non salvata');
   }
 }
@@ -133,12 +140,12 @@ $('#saveCode').onclick=()=>{
 };
 $('#content').addEventListener('click',e=>{
   const item=e.target.closest('.item');
-  if(item)del(item.dataset.id);
+  if(item)del(item.dataset.id,item);
 });
 $('#content').addEventListener('keydown',e=>{
   if(e.key==='Enter'||e.key===' '){
     const item=e.target.closest('.item');
-    if(item){e.preventDefault();del(item.dataset.id)}
+    if(item){e.preventDefault();del(item.dataset.id,item)}
   }
 });
 window.addEventListener('online',()=>refresh(true));
