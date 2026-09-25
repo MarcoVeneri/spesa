@@ -90,7 +90,15 @@ async function add(){
   }
 }
 let audioCtx=null;
+function showDoneOverlay(){
+  const o=$('#doneOverlay');
+  if(!o)return;
+  o.classList.remove('show');
+  void o.offsetWidth;
+  o.classList.add('show');
+}
 function feedback(){
+  showDoneOverlay();
   try{
     if(typeof navigator.vibrate==='function') navigator.vibrate(8);
   }catch{}
