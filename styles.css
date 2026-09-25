@@ -64,16 +64,22 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
  box-shadow:0 20px 52px rgba(36,60,103,.10);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
 }
 .item{
- display:grid;grid-template-columns:minmax(0,1fr) 48px;align-items:center;min-height:65px;padding:0 8px 0 17px;
- border-bottom:1px solid var(--line);transition:transform .12s ease,background .16s ease;
+ display:flex;align-items:center;min-height:65px;padding:0 17px;
+ border-bottom:1px solid var(--line);cursor:pointer;overflow:hidden;
+ transition:transform .12s ease,background .16s ease,opacity .16s ease;
+ transform-origin:center;will-change:transform,opacity;
 }
 .item:last-child{border-bottom:0}
-.itemName{min-width:0;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.trash{
- width:42px;height:42px;border:0;border-radius:14px;background:rgba(255,77,79,.10);color:var(--red);
- display:grid;place-items:center
+.itemName{min-width:0;width:100%;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item.removing{
+ pointer-events:none;
+ animation:itemDone .21s cubic-bezier(.22,.8,.32,1) forwards;
 }
-.trash svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@keyframes itemDone{
+ 0%{opacity:1;transform:translateX(0) scale(1);background:transparent}
+ 35%{opacity:1;transform:translateX(2px) scale(.985);background:rgba(47,200,111,.14)}
+ 100%{opacity:0;transform:translateX(30px) scale(.96);background:rgba(47,200,111,.06)}
+}
 .empty{
  text-align:center;padding:48px 18px;border-radius:24px;color:var(--muted);
  background:var(--glass);border:1px solid var(--edge);box-shadow:0 20px 52px rgba(36,60,103,.08)
@@ -99,5 +105,5 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 }
 @media(prefers-color-scheme:dark){
  .shareBtn,.glass,.list,.empty{box-shadow:0 24px 60px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.05)}
- .addBox input{background:rgba(255,255,255,.06)}.trash{background:rgba(255,77,79,.13)}
+ .addBox input{background:rgba(255,255,255,.06)}
 }
