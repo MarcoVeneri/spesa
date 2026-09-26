@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111214" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Buoni Spesa" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <title>Buoni Spesa</title>
+  <style>
+    :root{
+      color-scheme:light dark;
+      --bg:#f5f5f7; --card:rgba(255,255,255,.78); --card2:#fff; --text:#111214;
+      --muted:#6e6e73; --line:rgba(0,0,0,.08); --accent:#18a957; --danger:#ff3b30;
+      --warn:#ff9f0a; --shadow:0 10px 35px rgba(0,0,0,.08);
+      --used:#ececef; --chip:#efeff4;
+    }
+    @media (prefers-color-scheme:dark){
+      :root{
+        --bg:#000; --card:rgba(28,28,30,.82); --card2:#1c1c1e; --text:#f5f5f7;
+        --muted:#a1a1a6; --line:rgba(255,255,255,.1); --shadow:none;
+        --used:#161618; --chip:#2c2c2e;
+      }
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+    body{min-height:100svh}
+    button,input,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 100px)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .title-wrap{min-width:0}
+    .eyebrow{font-size:13px;color:var(--muted);font-weight:600}
+    h1{font-size:30px;line-height:1.05;margin:2px 0 0;letter-spacing:-.03em}
+    .circle-btn{width:44px;height:44px;border:0;border-radius:50%;background:var(--card2);color:var(--text);box-shadow:var(--shadow);font-size:25px;display:grid;place-items:center}
+    .stats{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin-bottom:12px}
+    .stat{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow)}
+    .stat .label{font-size:13px;color:var(--muted);font-weight:600}
+    .stat .value{font-size:30px;font-weight:750;margin-top:5px;letter-spacing:-.03em}
+    .stat.small .value{font-size:24px}
+    .alert{display:none;border-radius:18px;padding:12px 14px;margin:10px 0;background:color-mix(in srgb,var(--warn) 15%,transparent);border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);font-weight:650}
+    .alert.show{display:flex;align-items:center;gap:10px}
+    .tabs{display:flex;gap:8px;margin:14px 0 12px;overflow:auto;padding-bottom:2px}
+    .tab{border:0;background:var(--chip);color:var(--muted);padding:9px 13px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap}
+    .tab.active{background:var(--text);color:var(--bg)}
+    .list{display:grid;gap:10px}
+    .voucher{position:relative;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow);overflow:hidden}
+    .voucher.used{background:var(--used);opacity:.64}
+    .voucher.expired:not(.used){opacity:.72}
+    .voucher.urgent:not(.used){border-color:color-mix(in srgb,var(--danger) 55%,var(--line))}
+    .vrow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .merchant{font-size:13px;color:var(--muted);font-weight:700;margin-bottom:3px}
+    .amount{font-size:31px;font-weight:780;letter-spacing:-.04em}
+    .badge{font-size:12px;font-weight:800;border-radius:999px;padding:6px 8px;background:var(--chip);color:var(--muted);white-space:nowrap}
+    .badge.today,.badge.urgent{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+    .badge.soon{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+    .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;color:var(--muted);font-size:13px}
+    .meta span{background:var(--chip);padding:6px 8px;border-radius:10px}
+    .actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:13px}
+    .primary,.secondary{border:0;border-radius:14px;padding:11px 13px;font-weight:750}
+    .primary{background:var(--accent);color:#fff}
+    .secondary{background:var(--chip);color:var(--text)}
+    .empty{text-align:center;color:var(--muted);padding:50px 24px}
+    .empty .ico{font-size:44px;margin-bottom:10px}
+    .fab{position:fixed;right:max(20px,calc((100vw - 760px)/2 + 20px));bottom:calc(env(safe-area-inset-bottom) + 20px);border:0;border-radius:18px;background:var(--text);color:var(--bg);padding:15px 18px;font-weight:800;box-shadow:0 14px 35px rgba(0,0,0,.2);z-index:20}
+    dialog{border:0;padding:0;background:transparent;width:min(680px,calc(100vw - 24px));max-width:none}
+    dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(6px)}
+    .sheet{background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:28px;padding:18px;max-height:88svh;overflow:auto}
+    .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .sheet h2{margin:0;font-size:23px;letter-spacing:-.02em}
+    .x{border:0;background:var(--chip);color:var(--text);width:38px;height:38px;border-radius:50%;font-size:20px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .field{display:grid;gap:6px}
+    .field.full{grid-column:1/-1}
+    label{font-size:13px;color:var(--muted);font-weight:700}
+    input,textarea{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:14px;padding:12px;outline:none}
+    input:focus,textarea:focus{border-color:var(--accent)}
+    .check{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:var(--bg)}
+    .check input{width:20px;height:20px}
+    .save{width:100%;margin-top:14px;border:0;border-radius:15px;padding:13px 16px;background:var(--accent);color:#fff;font-weight:800}
+    .danger{width:100%;margin-top:8px;border:0;border-radius:15px;padding:12px 16px;background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger);font-weight:800}
+    .doc{margin-top:12px;border-radius:16px;overflow:hidden;background:var(--bg);min-height:120px;display:grid;place-items:center}
+    .doc img{display:block;max-width:100%;max-height:55svh}
+    .doc iframe{width:100%;height:55svh;border:0;background:#fff}
+    .note{font-size:13px;color:var(--muted);line-height:1.45}
+    .tiny{font-size:12px;color:var(--muted)}
+    @media(max-width:520px){
+      .app{padding-left:12px;padding-right:12px}
+      .stats{grid-template-columns:1fr 1fr}
+      .stat{padding:14px}
+      .stat .value{font-size:26px}
+      .form-grid{grid-template-columns:1fr}
+      .field.full{grid-column:auto}
+      .fab{right:14px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div class="title-wrap">
+        <div class="eyebrow">COOP · voucher e buoni</div>
+        <h1>Buoni Spesa</h1>
+      </div>
+      <button class="circle-btn" id="settingsBtn" aria-label="Informazioni">•••</button>
+    </div>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="label">Valore disponibile</div>
+        <div class="value" id="totalValue">€0</div>
+      </div>
+      <div class="stat small">
+        <div class="label">Da utilizzare</div>
+        <div class="value" id="activeCount">0</div>
+      </div>
+    </section>
+
+    <div class="alert" id="alertBox">⚠️ <span id="alertText"></span></div>
+
+    <nav class="tabs" aria-label="Filtri">
+      <button class="tab active" data-filter="active">Da usare</button>
+      <button class="tab" data-filter="soon">In scadenza</button>
+      <button class="tab" data-filter="used">Usati</button>
+      <button class="tab" data-filter="all">Tutti</button>
+    </nav>
+
+    <section class="list" id="voucherList"></section>
+  </main>
+
+  <button class="fab" id="addBtn">＋ Nuovo buono</button>
+
+  <dialog id="editDialog">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2 id="formTitle">Nuovo buono</h2>
+        <button class="x" data-close="editDialog">×</button>
+      </div>
+      <form id="voucherForm">
+        <input type="hidden" id="voucherId">
+        <div class="form-grid">
+          <div class="field">
+            <label for="merchant">Negozio</label>
+            <input id="merchant" value="Coop" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="amount">Valore (€)</label>
+            <input id="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="20">
+          </div>
+          <div class="field">
+            <label for="expiry">Scadenza / giorno di utilizzo</label>
+            <input id="expiry" type="date">
+          </div>
+          <div class="field full">
+            <label>Tipo di validità</label>
+            <label class="check">
+              <input id="singleDay" type="checkbox">
+              <span>Utilizzabile solo nel giorno indicato</span>
+            </label>
+          </div>
+          <div class="field full">
+            <label for="document">Foto o PDF del buono</label>
+            <input id="document" type="file" accept="image/*,application/pdf" capture="environment">
+            <div class="tiny" id="fileHint">Puoi fotografare il buono direttamente dal telefono.</div>
+          </div>
+          <div class="field full">
+            <label for="note">Note</label>
+            <textarea id="note" rows="3" placeholder="Es. valido su spesa minima, reparto escluso..."></textarea>
+          </div>
+        </div>
+        <button class="save" type="submit">Salva buono</button>
+        <button class="danger" id="deleteBtn" type="button" hidden>Elimina buono</button>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="detailDialog">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2 id="detailTitle">Buono</h2>
+        <button class="x" data-close="detailDialog">×</button>
+      </div>
+      <div id="detailContent"></div>
+    </div>
+  </dialog>
+
+  <dialog id="infoDialog">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2>Come funziona</h2>
+        <button class="x" data-close="infoDialog">×</button>
+      </div>
+      <p class="note">I buoni e i documenti restano salvati sul dispositivo in questa PWA. Quelli usati vengono mantenuti nello storico ma appaiono più scuri.</p>
+      <p class="note">Per i buoni con un giorno preciso, attiva “Utilizzabile solo nel giorno indicato”: saranno messi in evidenza automaticamente quando la data si avvicina.</p>
+      <p class="note"><strong>Nota promemoria:</strong> su iPhone una PWA statica non può garantire notifiche programmate quando è chiusa. Per ora la schermata segnala chiaramente le scadenze ogni volta che la apri.</p>
+    </div>
+  </dialog>
+
+<script>
+const DB_NAME='buoni-spesa-db', STORE='vouchers', DB_VERSION=1;
+let db, vouchers=[], filter='active';
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{ const d=req.result; if(!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE,{keyPath:'id'}); };
+    req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+  });
+}
+function tx(mode='readonly'){return db.transaction(STORE,mode).objectStore(STORE)}
+function getAll(){return new Promise((res,rej)=>{const r=tx().getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+function put(v){return new Promise((res,rej)=>{const r=tx('readwrite').put(v);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function del(id){return new Promise((res,rej)=>{const r=tx('readwrite').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+
+function localDate(iso){
+  if(!iso) return null;
+  const [y,m,d]=iso.split('-').map(Number);
+  return new Date(y,m-1,d,12,0,0);
+}
+function todayMid(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate(),12)}
+function daysLeft(v){
+  if(!v.expiry) return null;
+  return Math.round((localDate(v.expiry)-todayMid())/86400000);
+}
+function eur(n){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(Number(n)||0)}
+function fmtDate(iso){if(!iso)return 'Senza scadenza';return localDate(iso).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})}
+function status(v){
+  if(v.used) return {key:'used',label:'Usato',cls:''};
+  const d=daysLeft(v);
+  if(d===null) return {key:'active',label:'Valido',cls:''};
+  if(d<0) return {key:'expired',label:'Scaduto',cls:''};
+  if(d===0) return {key:'today',label:v.singleDay?'Solo oggi':'Scade oggi',cls:'today'};
+  if(d<=3) return {key:'urgent',label:'Scade tra '+d+'g',cls:'urgent'};
+  if(d<=7) return {key:'soon',label:'Scade tra '+d+'g',cls:'soon'};
+  return {key:'active',label:'Scade '+fmtDate(v.expiry),cls:''};
+}
+function escapeHtml(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+
+async function refresh(){
+  vouchers=await getAll();
+  vouchers.sort((a,b)=>{
+    if(!!a.used!==!!b.used) return a.used?1:-1;
+    const ae=a.expiry||'9999-12-31', be=b.expiry||'9999-12-31';
+    if(ae!==be) return ae.localeCompare(be);
+    return (b.createdAt||0)-(a.createdAt||0);
+  });
+  render();
+}
+function render(){
+  const active=vouchers.filter(v=>!v.used && status(v).key!=='expired');
+  document.getElementById('totalValue').textContent=eur(active.reduce((s,v)=>s+(Number(v.amount)||0),0));
+  document.getElementById('activeCount').textContent=active.length;
+  const urgent=active.filter(v=>{const d=daysLeft(v);return d!==null&&d<=3});
+  const alert=document.getElementById('alertBox');
+  if(urgent.length){
+    alert.classList.add('show');
+    document.getElementById('alertText').textContent=urgent.length===1?'Hai 1 buono da usare entro 3 giorni.':'Hai '+urgent.length+' buoni da usare entro 3 giorni.';
+  } else alert.classList.remove('show');
+
+  let visible=vouchers;
+  if(filter==='active') visible=vouchers.filter(v=>!v.used && status(v).key!=='expired');
+  if(filter==='soon') visible=vouchers.filter(v=>!v.used && ['today','urgent','soon'].includes(status(v).key));
+  if(filter==='used') visible=vouchers.filter(v=>v.used);
+  const list=document.getElementById('voucherList');
+  if(!visible.length){
+    list.innerHTML='<div class="empty"><div class="ico">🎟️</div><strong>Nessun buono qui</strong><div style="margin-top:6px">Aggiungi il primo voucher con il pulsante in basso.</div></div>';
+    return;
+  }
+  list.innerHTML=visible.map(v=>{
+    const st=status(v), cls=['voucher',v.used?'used':'',st.key==='expired'?'expired':'',['today','urgent'].includes(st.key)?'urgent':''].join(' ');
+    const usage=v.singleDay&&v.expiry?'<span>Solo il '+fmtDate(v.expiry)+'</span>':(v.expiry?'<span>Scadenza '+fmtDate(v.expiry)+'</span>':'<span>Senza scadenza</span>');
+    const doc=v.fileBlob?'<span>📎 Documento</span>':'';
+    return '<article class="'+cls+'">'+
+      '<div class="vrow"><div><div class="merchant">'+escapeHtml(v.merchant||'Buono')+'</div><div class="amount">'+eur(v.amount)+'</div></div><div class="badge '+st.cls+'">'+st.label+'</div></div>'+
+      '<div class="meta">'+usage+doc+(v.note?'<span>📝 '+escapeHtml(v.note).slice(0,46)+'</span>':'')+'</div>'+
+      '<div class="actions"><button class="primary" onclick="toggleUsed(\''+v.id+'\')">'+(v.used?'Rimetti da usare':'Segna usato')+'</button><button class="secondary" onclick="openDetail(\''+v.id+'\')">Apri</button></div>'+
+    '</article>';
+  }).join('');
+}
+
+window.toggleUsed=async function(id){
+  const v=vouchers.find(x=>x.id===id); if(!v)return;
+  v.used=!v.used; v.usedAt=v.used?Date.now():null; await put(v); await refresh();
+}
+window.openDetail=function(id){
+  const v=vouchers.find(x=>x.id===id); if(!v)return;
+  document.getElementById('detailTitle').textContent=(v.merchant||'Buono')+' · '+eur(v.amount);
+  const st=status(v);
+  let doc='<div class="doc"><div class="note">Nessun documento allegato.</div></div>';
+  if(v.fileBlob){
+    const url=URL.createObjectURL(v.fileBlob);
+    if((v.fileType||'').startsWith('image/')) doc='<div class="doc"><img src="'+url+'" alt="Documento buono"></div>';
+    else if(v.fileType==='application/pdf') doc='<div class="doc"><iframe src="'+url+'" title="Documento buono"></iframe></div>';
+    else doc='<div class="doc"><a href="'+url+'" target="_blank">Apri documento</a></div>';
+  }
+  document.getElementById('detailContent').innerHTML=
+    '<div class="amount">'+eur(v.amount)+'</div>'+
+    '<div class="meta"><span>'+st.label+'</span><span>'+(v.singleDay&&v.expiry?'Solo il '+fmtDate(v.expiry):v.expiry?'Scadenza '+fmtDate(v.expiry):'Senza scadenza')+'</span></div>'+
+    (v.note?'<p class="note">'+escapeHtml(v.note)+'</p>':'')+doc+
+    '<div class="actions" style="margin-top:14px"><button class="primary" id="detailUsed">'+(v.used?'Rimetti da usare':'Segna come usato')+'</button><button class="secondary" id="detailEdit">Modifica</button></div>';
+  document.getElementById('detailUsed').onclick=async()=>{await toggleUsed(v.id);document.getElementById('detailDialog').close()};
+  document.getElementById('detailEdit').onclick=()=>{document.getElementById('detailDialog').close();openEdit(v)};
+  document.getElementById('detailDialog').showModal();
+}
+function openEdit(v=null){
+  document.getElementById('voucherForm').reset();
+  document.getElementById('merchant').value=v?.merchant||'Coop';
+  document.getElementById('voucherId').value=v?.id||'';
+  document.getElementById('amount').value=v?.amount??'';
+  document.getElementById('expiry').value=v?.expiry||'';
+  document.getElementById('singleDay').checked=!!v?.singleDay;
+  document.getElementById('note').value=v?.note||'';
+  document.getElementById('formTitle').textContent=v?'Modifica buono':'Nuovo buono';
+  document.getElementById('deleteBtn').hidden=!v;
+  document.getElementById('fileHint').textContent=v?.fileBlob?'Documento già presente. Se ne scegli un altro verrà sostituito.':'Puoi fotografare il buono direttamente dal telefono.';
+  document.getElementById('editDialog').showModal();
+}
+document.getElementById('addBtn').onclick=()=>openEdit();
+document.getElementById('settingsBtn').onclick=()=>document.getElementById('infoDialog').showModal();
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  filter=b.dataset.filter; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b)); render();
+});
+
+document.getElementById('voucherForm').onsubmit=async e=>{
+  e.preventDefault();
+  const id=document.getElementById('voucherId').value||crypto.randomUUID();
+  const existing=vouchers.find(x=>x.id===id);
+  const file=document.getElementById('document').files[0];
+  const v={
+    id,
+    merchant:document.getElementById('merchant').value.trim()||'Coop',
+    amount:Number(document.getElementById('amount').value||0),
+    expiry:document.getElementById('expiry').value||'',
+    singleDay:document.getElementById('singleDay').checked,
+    note:document.getElementById('note').value.trim(),
+    used:existing?.used||false,
+    usedAt:existing?.usedAt||null,
+    createdAt:existing?.createdAt||Date.now(),
+    fileBlob:file||existing?.fileBlob||null,
+    fileName:file?.name||existing?.fileName||'',
+    fileType:file?.type||existing?.fileType||''
+  };
+  await put(v); document.getElementById('editDialog').close(); await refresh();
+};
+document.getElementById('deleteBtn').onclick=async()=>{
+  const id=document.getElementById('voucherId').value; if(!id)return;
+  if(confirm('Eliminare definitivamente questo buono?')){await del(id);document.getElementById('editDialog').close();await refresh();}
+};
+
+window.addEventListener('load',async()=>{
+  db=await openDB(); await refresh();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+});
+</script>
+</body>
+</html>
