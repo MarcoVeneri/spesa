@@ -1,5 +1,5 @@
 :root{
- --bg:#f3f6fc;--bg2:#eaf1fb;--ink:#0d1830;--muted:#7d899d;
+ --row-h:54px;--bg:#f3f6fc;--bg2:#eaf1fb;--ink:#0d1830;--muted:#7d899d;
  --glass:rgba(255,255,255,.72);--edge:rgba(255,255,255,.86);
  --line:rgba(70,90,125,.10);--green:#2fc86f;--green2:#11a85a;--red:#ff4d4f;--row:#f8faff;
  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
@@ -68,35 +68,39 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
  box-shadow:0 20px 52px rgba(36,60,103,.10);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
 }
 .swipeRow{
- position:relative;min-height:54px;overflow:hidden;
+ position:relative;height:var(--row-h);min-height:var(--row-h);overflow:hidden;
  background:transparent;touch-action:pan-y;
 }
 .swipeRow:last-child .item{border-bottom:0}
 .deleteAction{
  position:absolute;top:0;right:0;bottom:0;width:0;border:0;border-radius:0;
- background:#ff453a;color:#fff;font-size:14px;font-weight:800;
- display:flex;align-items:center;justify-content:flex-end;padding-right:20px;
+ background:rgb(92,85,87);color:#fff;font-size:14px;font-weight:600;
+ display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 16px 0 0;
  overflow:hidden;white-space:nowrap;opacity:1;visibility:visible;pointer-events:none;
 }
-.swipeRow.armed .deleteAction{pointer-events:none}
+.deleteAction span{flex:0 0 auto}
+.deleteAction svg{
+ flex:0 0 auto;width:20px;height:20px;fill:none;stroke:currentColor;
+ stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
+}
 .item{
- position:relative;z-index:1;display:flex;align-items:center;min-height:54px;padding:0 17px;
+ position:relative;z-index:1;display:flex;align-items:center;height:var(--row-h);min-height:var(--row-h);padding:0 17px;
  background:var(--row);transform:translateX(0);will-change:transform;width:100%;
  border-bottom:1px solid var(--line);
  touch-action:pan-y;-webkit-user-select:none;user-select:none;
 }
 .itemName{min-width:0;width:100%;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .swipeRow.removing{
- pointer-events:none;
- animation:itemDone .32s cubic-bezier(.22,.8,.32,1) forwards;
+ pointer-events:none;background:rgb(231,40,40);
+ animation:sparkCollapse .27s cubic-bezier(.4,0,.2,1) forwards;
 }
-.swipeRow.removing .itemName{animation:itemTextDone .18s ease forwards}
-@keyframes itemTextDone{
- 0%{opacity:1;transform:translateX(0)}
- 100%{opacity:.28;transform:translateX(5px)}
+.swipeRow.removing .deleteAction{
+ width:100%!important;background:rgb(231,40,40)!important;
 }
-@keyframes itemDone{
- 0%{min-height:54px;height:54px;opacity:1;transform:scale(1);background:transparent;padding-top:0;padding-bottom:0}
+@keyframes sparkCollapse{
+ 0%{height:var(--row-h);min-height:var(--row-h);opacity:1}
+ 100%{height:0;min-height:0;opacity:1;border-width:0}
+}
  40%{min-height:54px;height:54px;opacity:1;transform:scale(.985);background:rgba(47,200,111,.14);padding-top:0;padding-bottom:0}
  70%{min-height:54px;height:54px;opacity:1;transform:scale(.99);background:rgba(47,200,111,.08);padding-top:0;padding-bottom:0}
  100%{min-height:0;height:0;opacity:0;transform:scale(.98);background:rgba(47,200,111,.04);padding-top:0;padding-bottom:0;border-bottom-width:0}
@@ -121,8 +125,9 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:430px){
+ :root{--row-h:52px}
  .app{padding-left:12px;padding-right:12px}h1{font-size:35px}.top{padding-bottom:16px}
- .item,.swipeRow{min-height:52px}.itemName{font-size:20px;font-weight:500}
+ .itemName{font-size:20px;font-weight:500}
 }
 @media(prefers-color-scheme:dark){
  .shareBtn,.glass,.list,.empty{box-shadow:0 24px 60px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.05)}
