@@ -9,7 +9,7 @@
   "theme_color": "#111214",
   "icons": [
     {
-      "src": "./apple-touch-icon-v2.png?v=2",
+      "src": "./buoni-ticket-red-v1.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
