@@ -68,8 +68,9 @@ function clearTrash(){
   toast('Cestino svuotato');
 }
 function row(x){
-  return '<div class="item" data-id="'+x.id+'" role="button" tabindex="0" aria-label="Elimina '+esc(x.name)+'">'+
-    '<div class="itemName">'+esc(x.name)+'</div>'+
+  return '<div class="swipeRow" data-id="'+x.id+'">'+
+    '<button class="deleteAction" type="button" aria-label="Elimina '+esc(x.name)+'">Elimina</button>'+
+    '<div class="item" role="listitem"><div class="itemName">'+esc(x.name)+'</div></div>'+
   '</div>';
 }
 function emptyState(){
@@ -85,6 +86,8 @@ function render(){
 
   $('#count').textContent=items.length+' '+(items.length===1?'articolo':'articoli');
   $('#content').innerHTML=items.length?'<div class="list">'+items.map(row).join('')+'</div>':emptyState();
+  openSwipe=null;
+  bindAllSwipes();
 }
 async function refresh(silent=false){
   if(!token||loading)return;
@@ -240,16 +243,83 @@ $('#saveCode').onclick=()=>{
     refresh();
   }
 };
+let openSwipe=null;
+const SWIPE_OPEN=92;
+function closeSwipe(row,animate=true){
+  if(!row)return;
+  const item=row.querySelector('.item');
+  if(!item)return;
+  item.style.transition=animate?'transform .22s cubic-bezier(.22,.8,.32,1)':'none';
+  item.style.transform='translateX(0px)';
+  row.classList.remove('open');
+  if(openSwipe===row)openSwipe=null;
+}
+function openSwipeRow(row){
+  if(openSwipe&&openSwipe!==row)closeSwipe(openSwipe);
+  const item=row.querySelector('.item');
+  if(!item)return;
+  item.style.transition='transform .22s cubic-bezier(.22,.8,.32,1)';
+  item.style.transform='translateX(-'+SWIPE_OPEN+'px)';
+  row.classList.add('open');
+  openSwipe=row;
+}
+function bindSwipe(row){
+  const item=row.querySelector('.item');
+  if(!item)return;
+  let sx=0,sy=0,startOffset=0,dx=0,dragging=false,horizontal=false;
+  item.addEventListener('touchstart',e=>{
+    const t=e.touches[0];
+    sx=t.clientX;sy=t.clientY;dx=0;dragging=true;horizontal=false;
+    startOffset=row.classList.contains('open')?-SWIPE_OPEN:0;
+    item.style.transition='none';
+    if(openSwipe&&openSwipe!==row)closeSwipe(openSwipe);
+  },{passive:true});
+  item.addEventListener('touchmove',e=>{
+    if(!dragging)return;
+    const t=e.touches[0],mx=t.clientX-sx,my=t.clientY-sy;
+    if(!horizontal){
+      if(Math.abs(mx)<6)return;
+      if(Math.abs(my)>Math.abs(mx)){dragging=false;return}
+      horizontal=true;
+    }
+    e.preventDefault();
+    dx=mx;
+    let x=startOffset+mx;
+    x=Math.min(0,Math.max(-Math.max(220,row.clientWidth*.72),x));
+    item.style.transform='translateX('+x+'px)';
+  },{passive:false});
+  item.addEventListener('touchend',()=>{
+    if(!horizontal){dragging=false;item.style.transition='';return}
+    dragging=false;
+    const current=startOffset+dx;
+    const fullThreshold=-Math.max(190,row.clientWidth*.58);
+    if(current<=fullThreshold){
+      item.style.transition='transform .18s ease';
+      item.style.transform='translateX(-100%)';
+      setTimeout(()=>del(row.dataset.id,row),150);
+      return;
+    }
+    if(current<=-46){openSwipeRow(row)}
+    else closeSwipe(row);
+  },{passive:true});
+  item.addEventListener('touchcancel',()=>{dragging=false;closeSwipe(row)},{passive:true});
+}
+function bindAllSwipes(){
+  document.querySelectorAll('.swipeRow').forEach(bindSwipe);
+}
 $('#content').addEventListener('click',e=>{
-  const item=e.target.closest('.item');
-  if(item)del(item.dataset.id,item);
-});
-$('#content').addEventListener('keydown',e=>{
-  if(e.key==='Enter'||e.key===' '){
-    const item=e.target.closest('.item');
-    if(item){e.preventDefault();del(item.dataset.id,item)}
+  const delBtn=e.target.closest('.deleteAction');
+  if(delBtn){
+    const row=delBtn.closest('.swipeRow');
+    if(row)del(row.dataset.id,row);
+    return;
   }
+  const row=e.target.closest('.swipeRow');
+  if(row&&row.classList.contains('open'))closeSwipe(row);
 });
+document.addEventListener('touchstart',e=>{
+  if(openSwipe&&!e.target.closest('.swipeRow'))closeSwipe(openSwipe);
+},{passive:true});
 window.addEventListener('online',()=>refresh(true));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true)});
 if('serviceWorker'in navigator){
