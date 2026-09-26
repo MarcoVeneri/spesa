@@ -1,4 +1,4 @@
-const CACHE='buoni-spesa-v8';
+const CACHE='buoni-spesa-v9';
 const ASSETS=['./','./index.html','./manifest.json','./buoni-ticket-clean-v2.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
