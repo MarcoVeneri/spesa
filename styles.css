@@ -73,12 +73,13 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 }
 .swipeRow:last-child .item{border-bottom:0}
 .deleteAction{
- position:absolute;top:0;right:0;bottom:0;width:92px;border:0;border-radius:0;
- background:#ff453a;color:#fff;font-size:14px;font-weight:800;display:grid;place-items:center;
+ position:absolute;inset:0;border:0;border-radius:0;
+ background:#ff453a;color:#fff;font-size:14px;font-weight:800;
+ display:flex;align-items:center;justify-content:flex-end;padding-right:20px;
  opacity:0;visibility:hidden;pointer-events:none;
 }
-.swipeRow.dragging .deleteAction,.swipeRow.open .deleteAction{
- opacity:1;visibility:visible;pointer-events:auto;
+.swipeRow.dragging .deleteAction,.swipeRow.armed .deleteAction{
+ opacity:1;visibility:visible;
 }
 .item{
  position:relative;z-index:1;display:flex;align-items:center;min-height:54px;padding:0 17px;
@@ -130,35 +131,6 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
  .addBox input{background:rgba(255,255,255,.06)}
  .item{background:var(--row)}
 }
-.doneOverlay{
- position:fixed;inset:0;z-index:9999;pointer-events:none;
- display:grid;place-items:center;
- background:rgba(8,18,32,0);
- opacity:0;
-}
-.doneOverlay .doneCheck{
- width:min(42vw,180px);aspect-ratio:1;border-radius:50%;
- display:grid;place-items:center;
- background:linear-gradient(145deg,var(--green),var(--green2));
- color:#fff;font-size:min(24vw,108px);font-weight:800;line-height:1;
- box-shadow:0 28px 70px rgba(17,168,90,.32),inset 0 1px 0 rgba(255,255,255,.35);
- transform:scale(.45);
-}
-.doneOverlay.show{animation:overlayFade .58s ease-out forwards}
-.doneOverlay.show .doneCheck{animation:overlayCheck .58s cubic-bezier(.2,.9,.2,1) forwards}
-@keyframes overlayFade{
- 0%{opacity:0;background:rgba(8,18,32,0)}
- 18%{opacity:1;background:rgba(8,18,32,.08)}
- 72%{opacity:1;background:rgba(8,18,32,.05)}
- 100%{opacity:0;background:rgba(8,18,32,0)}
-}
-@keyframes overlayCheck{
- 0%{transform:scale(.45);filter:blur(1px)}
- 30%{transform:scale(1.08);filter:blur(0)}
- 55%{transform:scale(.98)}
- 100%{transform:scale(.9)}
-}
-
 .trashModal{
  position:fixed;inset:0;z-index:9998;display:none;align-items:flex-end;justify-content:center;
  background:rgba(7,14,26,.28);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:10px;
