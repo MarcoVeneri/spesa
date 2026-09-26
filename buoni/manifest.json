@@ -1,13 +1,18 @@
 {
-  "name":"Buoni Spesa",
-  "short_name":"Buoni",
-  "description":"Gestione voucher e buoni spesa con scadenze e storico utilizzo",
-  "start_url":"./",
-  "scope":"./",
-  "display":"standalone",
-  "background_color":"#111214",
-  "theme_color":"#111214",
-  "icons":[
-    {"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  "name": "Buoni Spesa",
+  "short_name": "Buoni",
+  "description": "Gestione voucher e buoni spesa con scadenze e storico utilizzo",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#111214",
+  "theme_color": "#111214",
+  "icons": [
+    {
+      "src": "./apple-touch-icon-v2.png?v=2",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
