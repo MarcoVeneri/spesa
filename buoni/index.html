@@ -87,6 +87,14 @@
     .doc iframe{width:100%;height:55svh;border:0;background:#fff}
     .note{font-size:13px;color:var(--muted);line-height:1.45}
     .tiny{font-size:12px;color:var(--muted)}
+    .scan-status{font-size:12px;color:var(--muted);padding:8px 10px;border-radius:12px;background:var(--chip);display:none}
+    .scan-status.show{display:block}
+    .scan-status.ok{color:var(--accent)}
+    .scan-status.err{color:var(--danger)}
+    .barcode-card{margin-top:14px;background:#fff;border-radius:18px;padding:14px 10px;text-align:center;overflow:hidden}
+    .barcode-card svg{width:100%;max-width:520px;height:auto}
+    .barcode-number{font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace;color:#111;margin-top:4px;word-break:break-all}
+    .barcode-label{font-size:12px;color:#666;margin-bottom:8px;font-weight:700}
     @media(max-width:520px){
       .app{padding-left:12px;padding-right:12px}
       .stats{grid-template-columns:1fr 1fr}
@@ -154,6 +162,10 @@
             <label for="expiry">Scadenza / giorno di utilizzo</label>
             <input id="expiry" type="date">
           </div>
+          <div class="field">
+            <label for="barcode">Codice a barre</label>
+            <input id="barcode" inputmode="numeric" autocomplete="off" placeholder="Viene letto dalla foto">
+          </div>
           <div class="field full">
             <label>Tipo di validità</label>
             <label class="check">
@@ -164,7 +176,8 @@
           <div class="field full">
             <label for="document">Foto o PDF del buono</label>
             <input id="document" type="file" accept="image/*,application/pdf" capture="environment">
-            <div class="tiny" id="fileHint">Puoi fotografare il buono direttamente dal telefono.</div>
+            <div class="tiny" id="fileHint">Fotografa bene il buono: se il codice a barre è visibile provo a leggerlo automaticamente.</div>
+            <div class="scan-status" id="scanStatus"></div>
           </div>
           <div class="field full">
             <label for="note">Note</label>
@@ -193,12 +206,14 @@
         <h2>Come funziona</h2>
         <button class="x" data-close="infoDialog">×</button>
       </div>
-      <p class="note">I buoni e i documenti restano salvati sul dispositivo in questa PWA. Quelli usati vengono mantenuti nello storico ma appaiono più scuri.</p>
+      <p class="note">I buoni e i documenti restano salvati sul dispositivo in questa PWA. Quando carichi una foto, l'app prova a leggere automaticamente il codice a barre e lo salva con il voucher.</p>
       <p class="note">Per i buoni con un giorno preciso, attiva “Utilizzabile solo nel giorno indicato”: saranno messi in evidenza automaticamente quando la data si avvicina.</p>
       <p class="note"><strong>Nota promemoria:</strong> su iPhone una PWA statica non può garantire notifiche programmate quando è chiusa. Per ora la schermata segnala chiaramente le scadenze ogni volta che la apri.</p>
     </div>
   </dialog>
 
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script>
 const DB_NAME='buoni-spesa-db', STORE='vouchers', DB_VERSION=1;
 let db, vouchers=[], filter='active';
@@ -273,9 +288,10 @@ function render(){
     const st=status(v), cls=['voucher',v.used?'used':'',st.key==='expired'?'expired':'',['today','urgent'].includes(st.key)?'urgent':''].join(' ');
     const usage=v.singleDay&&v.expiry?'<span>Solo il '+fmtDate(v.expiry)+'</span>':(v.expiry?'<span>Scadenza '+fmtDate(v.expiry)+'</span>':'<span>Senza scadenza</span>');
     const doc=v.fileBlob?'<span>📎 Documento</span>':'';
+    const bc=v.barcode?'<span>▥ Barcode</span>':'';
     return '<article class="'+cls+'">'+
       '<div class="vrow"><div><div class="merchant">'+escapeHtml(v.merchant||'Buono')+'</div><div class="amount">'+eur(v.amount)+'</div></div><div class="badge '+st.cls+'">'+st.label+'</div></div>'+
-      '<div class="meta">'+usage+doc+(v.note?'<span>📝 '+escapeHtml(v.note).slice(0,46)+'</span>':'')+'</div>'+
+      '<div class="meta">'+usage+doc+bc+(v.note?'<span>📝 '+escapeHtml(v.note).slice(0,46)+'</span>':'')+'</div>'+
       '<div class="actions"><button class="primary" onclick="toggleUsed(\''+v.id+'\')">'+(v.used?'Rimetti da usare':'Segna usato')+'</button><button class="secondary" onclick="openDetail(\''+v.id+'\')">Apri</button></div>'+
     '</article>';
   }).join('');
@@ -285,6 +301,54 @@ window.toggleUsed=async function(id){
   const v=vouchers.find(x=>x.id===id); if(!v)return;
   v.used=!v.used; v.usedAt=v.used?Date.now():null; await put(v); await refresh();
 }
+function jsBarcodeFormat(format=''){
+  const f=String(format).toLowerCase();
+  if(f.includes('ean_13')||f==='ean13') return 'EAN13';
+  if(f.includes('ean_8')||f==='ean8') return 'EAN8';
+  if(f.includes('upc_a')||f==='upc_a'||f==='upc') return 'UPC';
+  if(f.includes('code_39')||f.includes('code39')) return 'CODE39';
+  if(f.includes('codabar')) return 'codabar';
+  if(f.includes('itf')) return 'ITF14';
+  return 'CODE128';
+}
+function drawBarcode(v){
+  if(!v?.barcode || typeof JsBarcode==='undefined') return;
+  const el=document.getElementById('barcodeSvg');
+  if(!el) return;
+  try{
+    JsBarcode(el,v.barcode,{format:jsBarcodeFormat(v.barcodeFormat),displayValue:false,height:90,margin:4,background:'#ffffff',lineColor:'#111111'});
+  }catch(e){
+    try{JsBarcode(el,v.barcode,{format:'CODE128',displayValue:false,height:90,margin:4,background:'#ffffff',lineColor:'#111111'});}catch(_){}
+  }
+}
+async function detectBarcodeFromFile(file){
+  if(!file || !file.type.startsWith('image/')) return null;
+  if('BarcodeDetector' in window){
+    try{
+      const formats=await BarcodeDetector.getSupportedFormats();
+      const detector=new BarcodeDetector({formats});
+      const bitmap=await createImageBitmap(file);
+      const codes=await detector.detect(bitmap);
+      bitmap.close?.();
+      if(codes?.length) return {value:codes[0].rawValue,format:codes[0].format||''};
+    }catch(e){}
+  }
+  if(window.ZXing){
+    const url=URL.createObjectURL(file);
+    try{
+      const reader=new ZXing.BrowserMultiFormatReader();
+      const result=await reader.decodeFromImageUrl(url);
+      const fmt=ZXing.BarcodeFormat?.[result.getBarcodeFormat?.()] || '';
+      return {value:result.getText(),format:String(fmt)};
+    }catch(e){
+      return null;
+    }finally{
+      URL.revokeObjectURL(url);
+    }
+  }
+  return null;
+}
+
 window.openDetail=function(id){
   const v=vouchers.find(x=>x.id===id); if(!v)return;
   document.getElementById('detailTitle').textContent=(v.merchant||'Buono')+' · '+eur(v.amount);
@@ -296,11 +360,16 @@ window.openDetail=function(id){
     else if(v.fileType==='application/pdf') doc='<div class="doc"><iframe src="'+url+'" title="Documento buono"></iframe></div>';
     else doc='<div class="doc"><a href="'+url+'" target="_blank">Apri documento</a></div>';
   }
+  const barcodeBlock=v.barcode
+    ? '<div class="barcode-card"><div class="barcode-label">CODICE A BARRE DEL BUONO</div><svg id="barcodeSvg"></svg><div class="barcode-number">'+escapeHtml(v.barcode)+'</div></div>'
+    : '';
   document.getElementById('detailContent').innerHTML=
     '<div class="amount">'+eur(v.amount)+'</div>'+
     '<div class="meta"><span>'+st.label+'</span><span>'+(v.singleDay&&v.expiry?'Solo il '+fmtDate(v.expiry):v.expiry?'Scadenza '+fmtDate(v.expiry):'Senza scadenza')+'</span></div>'+
+    barcodeBlock+
     (v.note?'<p class="note">'+escapeHtml(v.note)+'</p>':'')+doc+
     '<div class="actions" style="margin-top:14px"><button class="primary" id="detailUsed">'+(v.used?'Rimetti da usare':'Segna come usato')+'</button><button class="secondary" id="detailEdit">Modifica</button></div>';
+  drawBarcode(v);
   document.getElementById('detailUsed').onclick=async()=>{await toggleUsed(v.id);document.getElementById('detailDialog').close()};
   document.getElementById('detailEdit').onclick=()=>{document.getElementById('detailDialog').close();openEdit(v)};
   document.getElementById('detailDialog').showModal();
@@ -311,11 +380,14 @@ function openEdit(v=null){
   document.getElementById('voucherId').value=v?.id||'';
   document.getElementById('amount').value=v?.amount??'';
   document.getElementById('expiry').value=v?.expiry||'';
+  document.getElementById('barcode').value=v?.barcode||'';
+  document.getElementById('barcode').dataset.format=v?.barcodeFormat||'';
   document.getElementById('singleDay').checked=!!v?.singleDay;
   document.getElementById('note').value=v?.note||'';
   document.getElementById('formTitle').textContent=v?'Modifica buono':'Nuovo buono';
   document.getElementById('deleteBtn').hidden=!v;
-  document.getElementById('fileHint').textContent=v?.fileBlob?'Documento già presente. Se ne scegli un altro verrà sostituito.':'Puoi fotografare il buono direttamente dal telefono.';
+  document.getElementById('fileHint').textContent=v?.fileBlob?'Documento già presente. Se ne scegli un altro verrà sostituito e rileggo il barcode.':'Fotografa bene il buono: provo a leggere automaticamente il codice a barre.';
+  const ss=document.getElementById('scanStatus'); ss.className='scan-status'; ss.textContent='';
   document.getElementById('editDialog').showModal();
 }
 document.getElementById('addBtn').onclick=()=>openEdit();
@@ -325,16 +397,46 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   filter=b.dataset.filter; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b)); render();
 });
 
+document.getElementById('document').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];
+  const ss=document.getElementById('scanStatus');
+  if(!file){ss.className='scan-status';return;}
+  if(!file.type.startsWith('image/')){
+    ss.textContent='PDF salvato. Per leggere automaticamente il barcode usa una foto o immagine del buono.';
+    ss.className='scan-status show';
+    return;
+  }
+  ss.textContent='Sto leggendo il codice a barre…';
+  ss.className='scan-status show';
+  const found=await detectBarcodeFromFile(file);
+  if(found?.value){
+    document.getElementById('barcode').value=found.value;
+    document.getElementById('barcode').dataset.format=found.format||'';
+    ss.textContent='✓ Codice a barre letto: '+found.value;
+    ss.className='scan-status show ok';
+  }else{
+    ss.textContent='Non riesco a leggere il barcode da questa immagine. Prova con una foto più vicina e nitida oppure inserisci il numero a mano.';
+    ss.className='scan-status show err';
+  }
+});
+
 document.getElementById('voucherForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('voucherId').value||crypto.randomUUID();
   const existing=vouchers.find(x=>x.id===id);
   const file=document.getElementById('document').files[0];
+  const barcodeValue=document.getElementById('barcode').value.trim();
+  if(barcodeValue && vouchers.some(x=>x.id!==id && x.barcode===barcodeValue)){
+    alert('Questo codice a barre è già presente tra i tuoi buoni.');
+    return;
+  }
   const v={
     id,
     merchant:document.getElementById('merchant').value.trim()||'Coop',
     amount:Number(document.getElementById('amount').value||0),
     expiry:document.getElementById('expiry').value||'',
+    barcode:document.getElementById('barcode').value.trim(),
+    barcodeFormat:document.getElementById('barcode').dataset.format||existing?.barcodeFormat||'',
     singleDay:document.getElementById('singleDay').checked,
     note:document.getElementById('note').value.trim(),
     used:existing?.used||false,
