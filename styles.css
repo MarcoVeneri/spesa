@@ -68,10 +68,10 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
  box-shadow:0 20px 52px rgba(36,60,103,.10);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
 }
 .swipeRow{
- position:relative;min-height:65px;overflow:hidden;border-bottom:1px solid var(--line);
- background:#ff453a;touch-action:pan-y;
+ position:relative;min-height:65px;overflow:hidden;
+ background:transparent;touch-action:pan-y;
 }
-.swipeRow:last-child{border-bottom:0}
+.swipeRow:last-child .item{border-bottom:0}
 .deleteAction{
  position:absolute;top:0;right:0;bottom:0;width:92px;border:0;border-radius:0;
  background:#ff453a;color:#fff;font-size:14px;font-weight:800;display:grid;place-items:center;
@@ -79,6 +79,7 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 .item{
  position:relative;z-index:1;display:flex;align-items:center;min-height:65px;padding:0 17px;
  background:var(--glass);transform:translateX(0);will-change:transform;
+ border-bottom:1px solid var(--line);
  touch-action:pan-y;-webkit-user-select:none;user-select:none;
 }
 .itemName{min-width:0;width:100%;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
