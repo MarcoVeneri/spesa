@@ -126,38 +126,9 @@ async function add(){
     toast('Non riesco ad aggiungere');
   }
 }
-let audioCtx=null;
-function emitTick(){
+function hapticDelete(){
   try{
-    if(!audioCtx||audioCtx.state!=='running')return;
-    const now=audioCtx.currentTime;
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-    osc.type='triangle';
-    osc.frequency.setValueAtTime(1350,now);
-    osc.frequency.exponentialRampToValueAtTime(820,now+.055);
-    gain.gain.setValueAtTime(.0001,now);
-    gain.gain.exponentialRampToValueAtTime(.11,now+.005);
-    gain.gain.exponentialRampToValueAtTime(.0001,now+.07);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now+.075);
-  }catch{}
-}
-function feedback(){
-  try{
-    if(typeof navigator.vibrate==='function') navigator.vibrate(8);
-  }catch{}
-  try{
-    const Ctx=window.AudioContext||window.webkitAudioContext;
-    if(!Ctx)return;
-    if(!audioCtx) audioCtx=new Ctx();
-    if(audioCtx.state==='suspended'){
-      audioCtx.resume().then(emitTick).catch(()=>{});
-    }else{
-      emitTick();
-    }
+    if(typeof navigator.vibrate==='function') navigator.vibrate(10);
   }catch{}
 }
 async function del(id,el){
@@ -240,12 +211,30 @@ function resetSwipe(row,animate=true){
   const item=row.querySelector('.item');
   if(!item)return;
   item.style.transition=animate?'transform .18s cubic-bezier(.22,.8,.32,1)':'none';
+  row.style.transition=animate?'--reveal .18s cubic-bezier(.22,.8,.32,1)':'none';
   item.style.transform='translateX(0px)';
+  row.style.setProperty('--reveal','0px');
   row.classList.remove('dragging','armed');
+}
+function commitSwipe(row,item){
+  row.classList.remove('dragging');
+  row.classList.add('armed');
+  hapticDelete();
+  const w=row.clientWidth;
+  row.style.transition='none';
+  item.style.transition='transform .20s cubic-bezier(.2,.85,.25,1)';
+  item.style.transform='translateX(-100%)';
+  const action=row.querySelector('.deleteAction');
+  if(action){
+    action.style.transition='width .20s cubic-bezier(.2,.85,.25,1)';
+    action.style.width=w+'px';
+  }
+  setTimeout(()=>del(row.dataset.id,row),210);
 }
 function bindSwipe(row){
   const item=row.querySelector('.item');
-  if(!item)return;
+  const action=row.querySelector('.deleteAction');
+  if(!item||!action)return;
   let sx=0,sy=0,dragging=false,horizontal=false,committed=false;
   item.addEventListener('touchstart',e=>{
     if(committed)return;
@@ -253,6 +242,8 @@ function bindSwipe(row){
     sx=t.clientX;sy=t.clientY;
     dragging=true;horizontal=false;
     item.style.transition='none';
+    action.style.transition='none';
+    action.style.width='0px';
   },{passive:true});
   item.addEventListener('touchmove',e=>{
     if(!dragging||committed)return;
@@ -266,18 +257,17 @@ function bindSwipe(row){
     }
     if(dx>=0){
       item.style.transform='translateX(0px)';
+      action.style.width='0px';
       return;
     }
     e.preventDefault();
-    item.style.transform='translateX('+dx+'px)';
-    if(Math.abs(dx)>=SWIPE_TRIGGER){
+    const reveal=Math.min(row.clientWidth,Math.abs(dx));
+    item.style.transform='translateX(-'+reveal+'px)';
+    action.style.width=reveal+'px';
+    if(reveal>=SWIPE_TRIGGER){
       committed=true;
       dragging=false;
-      row.classList.remove('dragging');
-      row.classList.add('armed');
-      item.style.transition='transform .20s cubic-bezier(.2,.85,.25,1)';
-      item.style.transform='translateX(-100%)';
-      setTimeout(()=>del(row.dataset.id,row),210);
+      commitSwipe(row,item);
     }
   },{passive:false});
   item.addEventListener('touchend',()=>{
