@@ -2,18 +2,18 @@
   "name": "Buoni Spesa",
   "short_name": "Buoni",
   "description": "Gestione voucher e buoni spesa con scadenze e storico utilizzo",
-  "start_url": "./",
+  "start_url": "./?v=12",
   "scope": "./",
   "display": "standalone",
   "background_color": "#111214",
   "theme_color": "#111214",
   "icons": [
     {
-      "src": "./apple-touch-icon.png",
+      "src": "./icon-v12.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     }
   ],
-  "id": "./"
+  "id": "./?v=12"
 }
