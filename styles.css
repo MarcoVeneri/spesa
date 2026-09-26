@@ -1,11 +1,11 @@
 :root{
  --bg:#f3f6fc;--bg2:#eaf1fb;--ink:#0d1830;--muted:#7d899d;
  --glass:rgba(255,255,255,.72);--edge:rgba(255,255,255,.86);
- --line:rgba(70,90,125,.10);--green:#2fc86f;--green2:#11a85a;--red:#ff4d4f;
+ --line:rgba(70,90,125,.10);--green:#2fc86f;--green2:#11a85a;--red:#ff4d4f;--row:#f8faff;
  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,sans-serif;
 }
 @media(prefers-color-scheme:dark){
- :root{--bg:#07101d;--bg2:#0d1727;--ink:#f6f9ff;--muted:#9ba8bc;--glass:rgba(22,33,51,.72);--edge:rgba(255,255,255,.10);--line:rgba(255,255,255,.08)}
+ :root{--bg:#07101d;--bg2:#0d1727;--ink:#f6f9ff;--muted:#9ba8bc;--glass:rgba(22,33,51,.72);--edge:rgba(255,255,255,.10);--line:rgba(255,255,255,.08);--row:#172235}
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;color:var(--ink);-webkit-font-smoothing:antialiased}
@@ -64,7 +64,7 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 .status{display:inline-flex;align-items:center;gap:6px}
 .status:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(47,200,111,.10)}
 .list{
- overflow:hidden;border-radius:24px;background:var(--glass);border:1px solid var(--edge);
+ overflow:hidden;border-radius:24px;background:var(--row);border:1px solid var(--edge);
  box-shadow:0 20px 52px rgba(36,60,103,.10);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
 }
 .swipeRow{
@@ -78,7 +78,7 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 }
 .item{
  position:relative;z-index:1;display:flex;align-items:center;min-height:65px;padding:0 17px;
- background:var(--glass);transform:translateX(0);will-change:transform;
+ background:var(--row);transform:translateX(0);will-change:transform;width:100%;
  border-bottom:1px solid var(--line);
  touch-action:pan-y;-webkit-user-select:none;user-select:none;
 }
@@ -124,7 +124,7 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 @media(prefers-color-scheme:dark){
  .shareBtn,.glass,.list,.empty{box-shadow:0 24px 60px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.05)}
  .addBox input{background:rgba(255,255,255,.06)}
- .item{background:rgba(22,33,51,.96)}
+ .item{background:var(--row)}
 }
 .doneOverlay{
  position:fixed;inset:0;z-index:9999;pointer-events:none;
