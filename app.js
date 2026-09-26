@@ -251,7 +251,7 @@ function closeSwipe(row,animate=true){
   if(!item)return;
   item.style.transition=animate?'transform .22s cubic-bezier(.22,.8,.32,1)':'none';
   item.style.transform='translateX(0px)';
-  row.classList.remove('open');
+  row.classList.remove('open','dragging');
   if(openSwipe===row)openSwipe=null;
 }
 function openSwipeRow(row){
@@ -260,6 +260,7 @@ function openSwipeRow(row){
   if(!item)return;
   item.style.transition='transform .22s cubic-bezier(.22,.8,.32,1)';
   item.style.transform='translateX(-'+SWIPE_OPEN+'px)';
+  row.classList.remove('dragging');
   row.classList.add('open');
   openSwipe=row;
 }
@@ -284,6 +285,7 @@ function bindSwipe(row){
     }
     e.preventDefault();
     dx=mx;
+    row.classList.add('dragging');
     let x=startOffset+mx;
     x=Math.min(0,Math.max(-Math.max(220,row.clientWidth*.72),x));
     item.style.transform='translateX('+x+'px)';
@@ -294,6 +296,8 @@ function bindSwipe(row){
     const current=startOffset+dx;
     const fullThreshold=-Math.max(120,row.clientWidth*.50);
     if(current<=fullThreshold){
+      row.classList.remove('dragging');
+      row.classList.add('open');
       item.style.transition='transform .18s ease';
       item.style.transform='translateX(-100%)';
       setTimeout(()=>del(row.dataset.id,row),150);
