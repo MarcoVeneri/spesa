@@ -69,7 +69,7 @@ function clearTrash(){
 }
 function row(x){
   return '<div class="swipeRow" data-id="'+x.id+'">'+
-    '<button class="deleteAction" type="button" aria-label="Elimina '+esc(x.name)+'">Elimina</button>'+
+    '<button class="deleteAction" type="button" aria-label="Elimina '+esc(x.name)+'"><span>Elimina</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/></svg></button>'+
     '<div class="item" role="listitem"><div class="itemName">'+esc(x.name)+'</div></div>'+
   '</div>';
 }
@@ -135,13 +135,14 @@ async function del(id,el){
   if(!id||!el||el.classList.contains('removing'))return;
   const previous=items.slice();
   const removed=items.find(x=>x.id===id);
+  const request=rpc('shopping_delete_item',{p_token:token,p_item_id:id});
   el.classList.add('removing');
-  await new Promise(resolve=>setTimeout(resolve,320));
+  await new Promise(resolve=>setTimeout(resolve,270));
   items=items.filter(x=>x.id!==id);
   render();
   localStorage.setItem(LS_CACHE,JSON.stringify(items));
   try{
-    await rpc('shopping_delete_item',{p_token:token,p_item_id:id});
+    await request;
     if(removed){
       const t=trashCached();
       t.unshift({name:removed.name,deletedAt:Date.now()});
@@ -206,30 +207,35 @@ $('#saveCode').onclick=()=>{
   }
 };
 const SWIPE_TRIGGER=44;
+function mixDeleteColor(progress){
+  const p=Math.max(0,Math.min(1,progress));
+  const a=[92,85,87],b=[231,40,40];
+  const v=a.map((n,i)=>Math.round(n+(b[i]-n)*p));
+  return 'rgb('+v.join(',')+')';
+}
 function resetSwipe(row,animate=true){
   if(!row)return;
   const item=row.querySelector('.item');
-  if(!item)return;
+  const action=row.querySelector('.deleteAction');
+  if(!item||!action)return;
   item.style.transition=animate?'transform .18s cubic-bezier(.22,.8,.32,1)':'none';
-  row.style.transition=animate?'--reveal .18s cubic-bezier(.22,.8,.32,1)':'none';
+  action.style.transition=animate?'width .18s cubic-bezier(.22,.8,.32,1),background-color .18s ease':'none';
   item.style.transform='translateX(0px)';
-  row.style.setProperty('--reveal','0px');
+  action.style.width='0px';
+  action.style.backgroundColor='rgb(92,85,87)';
   row.classList.remove('dragging','armed');
 }
-function commitSwipe(row,item){
+function commitSwipe(row,item,action){
   row.classList.remove('dragging');
   row.classList.add('armed');
   hapticDelete();
   const w=row.clientWidth;
-  row.style.transition='none';
-  item.style.transition='transform .20s cubic-bezier(.2,.85,.25,1)';
+  item.style.transition='transform .13s cubic-bezier(.18,.82,.22,1)';
+  action.style.transition='width .13s cubic-bezier(.18,.82,.22,1),background-color .10s linear';
+  action.style.backgroundColor='rgb(231,40,40)';
+  action.style.width=w+'px';
   item.style.transform='translateX(-100%)';
-  const action=row.querySelector('.deleteAction');
-  if(action){
-    action.style.transition='width .20s cubic-bezier(.2,.85,.25,1)';
-    action.style.width=w+'px';
-  }
-  setTimeout(()=>del(row.dataset.id,row),210);
+  setTimeout(()=>del(row.dataset.id,row),190);
 }
 function bindSwipe(row){
   const item=row.querySelector('.item');
@@ -244,13 +250,14 @@ function bindSwipe(row){
     item.style.transition='none';
     action.style.transition='none';
     action.style.width='0px';
+    action.style.backgroundColor='rgb(92,85,87)';
   },{passive:true});
   item.addEventListener('touchmove',e=>{
     if(!dragging||committed)return;
     const t=e.touches[0];
     const dx=t.clientX-sx,dy=t.clientY-sy;
     if(!horizontal){
-      if(Math.abs(dx)<5)return;
+      if(Math.abs(dx)<4)return;
       if(Math.abs(dy)>Math.abs(dx)){dragging=false;return}
       horizontal=true;
       row.classList.add('dragging');
@@ -262,12 +269,14 @@ function bindSwipe(row){
     }
     e.preventDefault();
     const reveal=Math.min(row.clientWidth,Math.abs(dx));
+    const progress=Math.min(1,reveal/SWIPE_TRIGGER);
     item.style.transform='translateX(-'+reveal+'px)';
     action.style.width=reveal+'px';
+    action.style.backgroundColor=mixDeleteColor(progress);
     if(reveal>=SWIPE_TRIGGER){
       committed=true;
       dragging=false;
-      commitSwipe(row,item);
+      commitSwipe(row,item,action);
     }
   },{passive:false});
   item.addEventListener('touchend',()=>{
@@ -284,13 +293,6 @@ function bindSwipe(row){
 function bindAllSwipes(){
   document.querySelectorAll('.swipeRow').forEach(bindSwipe);
 }
-$('#content').addEventListener('click',e=>{
-  const delBtn=e.target.closest('.deleteAction');
-  if(delBtn){
-    const row=delBtn.closest('.swipeRow');
-    if(row)del(row.dataset.id,row);
-  }
-});
 window.addEventListener('online',()=>refresh(true));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true)});
 if('serviceWorker'in navigator){
