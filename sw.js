@@ -1,5 +1,5 @@
-const CACHE='spesa-v19';
-const ASSETS=['./','./index.html','./styles.css?v=18','./app.js?v=19','./manifest.webmanifest','./icon.svg'];
+const CACHE='spesa-v20';
+const ASSETS=['./','./index.html','./styles.css?v=20','./app.js?v=20','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
   self.skipWaiting();
