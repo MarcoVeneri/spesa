@@ -73,14 +73,12 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 }
 .swipeRow:last-child .item{border-bottom:0}
 .deleteAction{
- position:absolute;inset:0;border:0;border-radius:0;
+ position:absolute;top:0;right:0;bottom:0;width:0;border:0;border-radius:0;
  background:#ff453a;color:#fff;font-size:14px;font-weight:800;
  display:flex;align-items:center;justify-content:flex-end;padding-right:20px;
- opacity:0;visibility:hidden;pointer-events:none;
+ overflow:hidden;white-space:nowrap;opacity:1;visibility:visible;pointer-events:none;
 }
-.swipeRow.dragging .deleteAction,.swipeRow.armed .deleteAction{
- opacity:1;visibility:visible;
-}
+.swipeRow.armed .deleteAction{pointer-events:none}
 .item{
  position:relative;z-index:1;display:flex;align-items:center;min-height:54px;padding:0 17px;
  background:var(--row);transform:translateX(0);will-change:transform;width:100%;
