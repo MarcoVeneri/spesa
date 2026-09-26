@@ -292,7 +292,7 @@ function bindSwipe(row){
     if(!horizontal){dragging=false;item.style.transition='';return}
     dragging=false;
     const current=startOffset+dx;
-    const fullThreshold=-Math.max(190,row.clientWidth*.58);
+    const fullThreshold=-Math.max(120,row.clientWidth*.50);
     if(current<=fullThreshold){
       item.style.transition='transform .18s ease';
       item.style.transform='translateX(-100%)';
