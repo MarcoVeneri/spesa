@@ -1,5 +1,5 @@
-const CACHE='buoni-spesa-v9';
-const ASSETS=['./','./index.html','./manifest.json','./buoni-ticket-clean-v2.png'];
+const CACHE='buoni-spesa-v10';
+const ASSETS=['./','./index.html','./manifest.json','./apple-touch-icon-v10.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',e=>{
