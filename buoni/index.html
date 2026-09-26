@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Buoni Spesa" />
-  <link rel="manifest" href="./manifest.json?v=8" />\n  <link rel="apple-touch-icon" sizes="192x192" href="./buoni-ticket-clean-v2.png?v=2" />\n  <link rel="apple-touch-icon-precomposed" href="./buoni-ticket-clean-v2.png?v=2" />
+  <link rel="manifest" href="./manifest.json?v=9" />\n  <link rel="apple-touch-icon" sizes="192x192" href="./buoni-ticket-clean-v2.png?v=2" />\n  <link rel="apple-touch-icon-precomposed" href="./buoni-ticket-clean-v2.png?v=2" />
   <link rel="icon" href="./buoni-ticket-clean-v2.png?v=2" type="image/png" />
   <title>Buoni Spesa</title>
   <style>
@@ -120,10 +120,10 @@
         <h1>Buoni Spesa</h1>
       </div>
       <div class="top-actions">
-        <button class="import-btn" id="bulkImportBtn">Importa PDF</button>
+        <button class="import-btn" id="bulkImportBtn">Importa buoni</button>
         <button class="circle-btn" id="settingsBtn" aria-label="Informazioni">•••</button>
       </div>
-      <input id="bulkPdfInput" type="file" accept="application/pdf" multiple hidden>
+      <input id="bulkPdfInput" type="file" accept="application/pdf,image/*" multiple hidden>
     </div>
 
     <section class="stats">
@@ -307,7 +307,7 @@ function render(){
     const st=status(v), cls=['voucher',v.used?'used':'',st.key==='expired'?'expired':'',['today','urgent'].includes(st.key)?'urgent':''].join(' ');
     const usage=v.validFrom&&v.expiry?'<span>'+fmtDate(v.validFrom)+' → '+fmtDate(v.expiry)+'</span>':(v.expiry?'<span>Scadenza '+fmtDate(v.expiry)+'</span>':'<span>Senza scadenza</span>');
     const doc=((v.attachments&&v.attachments.length)||v.fileBlob)?'<span>📎 Documento</span>':'';
-    const bc=v.barcode?'<button class="metaBtn" onclick="event.stopPropagation();openDetail(\''+v.id+'\')">▥ Barcode</button>':'';
+    const bc=v.barcode?'<button class="metaBtn" onclick="event.stopPropagation();openBarcode(\''+v.id+'\')">▥ Barcode</button>':'';
     return '<article class="'+cls+'">'+
       '<div class="vrow"><div><div class="merchant">'+escapeHtml(v.merchant||'Buono')+'</div><div class="amount">'+eur(v.amount)+'</div></div><div class="badge '+st.cls+'">'+st.label+'</div></div>'+
       '<div class="meta">'+usage+doc+bc+(v.note?'<span>📝 '+escapeHtml(v.note).slice(0,46)+'</span>':'')+'</div>'+
@@ -480,6 +480,16 @@ function mergeAnalysis(list){
   return out;
 }
 
+window.openBarcode=function(id){
+  const v=vouchers.find(x=>x.id===id); if(!v)return;
+  let docs=(v.attachments||[]).slice();
+  if(!docs.length && v.fileBlob) docs=[{blob:v.fileBlob,type:v.fileType||'',name:v.fileName||''}];
+  if(!docs.length){openDetail(id);return;}
+  const a=docs[docs.length-1];
+  const url=URL.createObjectURL(a.blob);
+  const w=window.open(url,'_blank');
+  if(!w) openDetail(id);
+}
 window.openDetail=function(id){
   const v=vouchers.find(x=>x.id===id); if(!v)return;
   document.getElementById('detailTitle').textContent=(v.merchant||'Buono')+' · '+eur(v.amount);
@@ -581,7 +591,7 @@ document.getElementById('bulkPdfInput').addEventListener('change',async e=>{
     };
     await put(v); imported++; if(!amount||!a.expiry||!a.barcode) review++;
   }
-  document.getElementById('bulkImportBtn').textContent='Importa PDF';
+  document.getElementById('bulkImportBtn').textContent='Importa buoni';
   e.target.value='';
   await refresh();
   alert('Importati '+imported+' buoni.'+(review?' '+review+' richiedono un controllo dei dati.':''));
