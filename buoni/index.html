@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Buoni Spesa" />
-  <link rel="manifest" href="./manifest.json?v=12" />
+  <link rel="manifest" href="./manifest.json?v=13" />
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-v12.png" />
   <link rel="apple-touch-icon-precomposed" href="./icon-v12.png" />
   <link rel="icon" href="./icon-v12.png" type="image/png" />
@@ -64,10 +64,11 @@
     .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;color:var(--muted);font-size:13px}
     .meta span{background:var(--chip);padding:6px 8px;border-radius:10px}
     .metaBtn{border:0;background:var(--chip);color:var(--muted);padding:6px 8px;border-radius:10px;font:inherit;font-size:13px;cursor:pointer}
-    .actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:13px}
+    .actions{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:13px}
     .primary,.secondary{border:0;border-radius:14px;padding:11px 13px;font-weight:750}
     .primary{background:var(--accent);color:#fff}
     .secondary{background:var(--chip);color:var(--text)}
+    .dangerMini{border:0;border-radius:14px;padding:11px 13px;background:rgba(255,59,48,.12);color:#ff3b30;font-weight:800}
     .empty{text-align:center;color:var(--muted);padding:50px 24px}
     .empty .ico{font-size:44px;margin-bottom:10px}
     .fab{position:fixed;right:max(20px,calc((100vw - 760px)/2 + 20px));bottom:calc(env(safe-area-inset-bottom) + 20px);border:0;border-radius:18px;background:var(--text);color:var(--bg);padding:15px 18px;font-weight:800;box-shadow:0 14px 35px rgba(0,0,0,.2);z-index:20}
@@ -308,16 +309,20 @@ function render(){
   list.innerHTML=visible.map(v=>{
     const st=status(v), cls=['voucher',v.used?'used':'',st.key==='expired'?'expired':'',['today','urgent'].includes(st.key)?'urgent':''].join(' ');
     const usage=v.validFrom&&v.expiry?'<span>'+fmtDate(v.validFrom)+' → '+fmtDate(v.expiry)+'</span>':(v.expiry?'<span>Scadenza '+fmtDate(v.expiry)+'</span>':'<span>Senza scadenza</span>');
-    const doc=((v.attachments&&v.attachments.length)||v.fileBlob)?'<span>📎 Documento</span>':'';
     const bc=v.barcode?'<button class="metaBtn" onclick="event.stopPropagation();openBarcode(\''+v.id+'\')">▥ Barcode</button>':'';
     return '<article class="'+cls+'">'+
       '<div class="vrow"><div><div class="merchant">'+escapeHtml(v.merchant||'Buono')+'</div><div class="amount">'+eur(v.amount)+'</div></div><div class="badge '+st.cls+'">'+st.label+'</div></div>'+
-      '<div class="meta">'+usage+doc+bc+(v.note?'<span>📝 '+escapeHtml(v.note).slice(0,46)+'</span>':'')+'</div>'+
-      '<div class="actions"><button class="primary" onclick="toggleUsed(\''+v.id+'\')">'+(v.used?'Rimetti da usare':'Segna usato')+'</button><button class="secondary" onclick="openDetail(\''+v.id+'\')">Apri</button></div>'+
+      '<div class="meta">'+usage+bc+(v.note?'<span>📝 '+escapeHtml(v.note).slice(0,46)+'</span>':'')+'</div>'+
+      '<div class="actions"><button class="primary" onclick="toggleUsed(\''+v.id+'\')">'+(v.used?'Rimetti da usare':'Segna usato')+'</button><button class="secondary" onclick="openDetail(\''+v.id+'\')">Apri</button><button class="dangerMini" onclick="deleteVoucher(\''+v.id+'\')" aria-label="Elimina buono">🗑</button></div>'+
     '</article>';
   }).join('');
 }
 
+window.deleteVoucher=async function(id){
+  const v=vouchers.find(x=>x.id===id); if(!v)return;
+  if(!confirm('Eliminare definitivamente questo buono?'))return;
+  await del(id); await refresh();
+}
 window.toggleUsed=async function(id){
   const v=vouchers.find(x=>x.id===id); if(!v)return;
   v.used=!v.used; v.usedAt=v.used?Date.now():null; await put(v); await refresh();
@@ -382,15 +387,17 @@ async function pdfToCanvasAndText(file){
   await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
   return {text,canvas};
 }
+const KNOWN_VOUCHER_AMOUNTS=[5,10,15,20,25,30,40,50,75,100,150,200];
 function voucherAmountCandidates(text){
   const raw=String(text||'').replace(/O/g,'0').replace(/[Il|]/g,'1');
-  const vals=[];
-  for(const m of raw.matchAll(/(?:€\s*)?(\d{1,3})(?:[.,]\d{1,2})?\s*(?:€|EUR)?/gi)){
-    const n=Number(m[1]);
-    if(n>0 && n<=500) vals.push(n);
+  const strict=[];
+  for(const m of raw.matchAll(/(?:€\s*(\d{1,3})|(\d{1,3})\s*(?:€|EUR))/gi)){
+    const n=Number(m[1]||m[2]);
+    if(KNOWN_VOUCHER_AMOUNTS.includes(n)) strict.push(n);
   }
-  const preferred=[5,10,15,20,25,30,40,50,75,100,150,200];
-  return preferred.find(n=>vals.includes(n)) ?? vals.find(n=>n>=5) ?? null;
+  if(strict.length) return strict[0];
+  const loose=[...raw.matchAll(/\b(5|10|15|20|25|30|40|50|75|100|150|200)\b/g)].map(x=>Number(x[1]));
+  return loose.length?loose[0]:null;
 }
 function cropVoucherCanvas(src,x,y,w,h,scale=3){
   const out=document.createElement('canvas');
@@ -411,13 +418,16 @@ function cropVoucherCanvas(src,x,y,w,h,scale=3){
 async function detectAmountFromVoucherCanvas(canvas){
   if(!canvas || !window.Tesseract) return null;
   const regions=[
-    cropVoucherCanvas(canvas,.50,.03,.47,.34,3),
-    cropVoucherCanvas(canvas,.38,.00,.60,.45,2),
+    cropVoucherCanvas(canvas,.58,.16,.29,.18,4),
+    cropVoucherCanvas(canvas,.54,.12,.36,.25,3),
     cropVoucherCanvas(canvas,.00,.00,1,.55,2)
   ];
   for(const region of regions){
     try{
-      const r=await Tesseract.recognize(region,'eng',{});
+      const r=await Tesseract.recognize(region,'eng',{
+        tessedit_char_whitelist:'0123456789€',
+        tessedit_pageseg_mode:'7'
+      });
       const n=voucherAmountCandidates(r?.data?.text||'');
       if(n) return n;
     }catch(e){}
@@ -457,11 +467,15 @@ async function analyzeFile(file,{ocr=true}={}){
   }else if(file.type.startsWith('image/')){
     const bmp=await createImageBitmap(file);
     barcode=await detectBarcodeFromSource(bmp);
+    canvas=document.createElement('canvas');
+    canvas.width=bmp.width; canvas.height=bmp.height;
+    canvas.getContext('2d').drawImage(bmp,0,0);
     if(ocr) text=await ocrCanvasOrFile(file);
     bmp.close?.();
   }
   const parsed=parseVoucherText(text);
-  if((parsed.amount==null || parsed.amount===0) && canvas){
+  const suspicious=parsed.amount==null || parsed.amount===0 || !KNOWN_VOUCHER_AMOUNTS.includes(Number(parsed.amount));
+  if(suspicious && canvas){
     const detected=await detectAmountFromVoucherCanvas(canvas);
     if(detected) parsed.amount=detected;
   }
@@ -513,12 +527,16 @@ window.openDetail=function(id){
     '<div class="meta"><span>'+st.label+'</span><span>'+validText+'</span>'+(v.minSpend?'<span>Spesa minima '+eur(v.minSpend)+'</span>':'')+'</div>'+
     barcodeBlock+
     (v.note?'<p class="note">'+escapeHtml(v.note)+'</p>':'')+doc+
-    '<div class="actions" style="margin-top:14px"><button class="primary" id="detailUsed">'+(v.used?'Rimetti da usare':'Segna usato')+'</button><button class="secondary" id="detailEdit">Modifica</button></div>';
+    '<div class="actions" style="margin-top:14px"><button class="primary" id="detailUsed">'+(v.used?'Rimetti da usare':'Segna usato')+'</button><button class="secondary" id="detailEdit">Modifica</button><button class="dangerMini" id="detailDelete">🗑</button></div>';
   document.getElementById('detailUsed').onclick=async()=>{
     await toggleUsed(v.id);
     document.getElementById('detailDialog').close();
   };
   document.getElementById('detailEdit').onclick=()=>{document.getElementById('detailDialog').close();openEdit(v)};
+  document.getElementById('detailDelete').onclick=async()=>{
+    if(!confirm('Eliminare definitivamente questo buono?'))return;
+    await del(v.id); await refresh(); document.getElementById('detailDialog').close();
+  };
   document.getElementById('detailDialog').showModal();
 }
 function openEdit(v=null){
@@ -635,8 +653,31 @@ document.getElementById('deleteBtn').onclick=async()=>{
   if(confirm('Eliminare definitivamente questo buono?')){await del(id);document.getElementById('editDialog').close();await refresh();}
 };
 
+async function repairSuspiciousVoucherAmounts(){
+  const candidates=vouchers.filter(v=>{
+    const n=Number(v.amount||0);
+    return (!n || !KNOWN_VOUCHER_AMOUNTS.includes(n)) && ((v.attachments&&v.attachments.length)||v.fileBlob);
+  });
+  for(const v of candidates){
+    let docs=(v.attachments||[]).slice();
+    if(!docs.length && v.fileBlob) docs=[{blob:v.fileBlob,type:v.fileType||'',name:v.fileName||''}];
+    const src=docs[0]?.blob;
+    if(!src) continue;
+    try{
+      const a=await analyzeFile(src,{ocr:true});
+      const n=Number(a.amount||0);
+      if(KNOWN_VOUCHER_AMOUNTS.includes(n) && n!==Number(v.amount||0)){
+        v.amount=n;
+        v.amountAutoFixedV13=true;
+        await put(v);
+        await refresh();
+      }
+    }catch(e){}
+  }
+}
 window.addEventListener('load',async()=>{
   db=await openDB(); await refresh();
+  setTimeout(()=>repairSuspiciousVoucherAmounts(),250);
   if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
 </script>
