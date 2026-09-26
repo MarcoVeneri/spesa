@@ -58,7 +58,7 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
  color:var(--muted);background:rgba(127,127,127,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.32)
 }
 .addBox .trashTop.active{color:var(--red);background:rgba(255,77,79,.10)}
-.addBox button:active,.shareBtn:active,.item:active{transform:scale(.985)}
+.addBox button:active,.shareBtn:active{transform:scale(.985)}
 .addBox button svg{width:25px;height:25px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round}
 .listHead{display:flex;align-items:center;justify-content:space-between;padding:17px 5px 9px;color:var(--muted);font-size:11px;font-weight:800}
 .status{display:inline-flex;align-items:center;gap:6px}
@@ -67,19 +67,26 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
  overflow:hidden;border-radius:24px;background:var(--glass);border:1px solid var(--edge);
  box-shadow:0 20px 52px rgba(36,60,103,.10);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
 }
-.item{
- display:flex;align-items:center;min-height:65px;padding:0 17px;position:relative;
- border-bottom:1px solid var(--line);cursor:pointer;overflow:hidden;
- transition:transform .12s ease,background .16s ease,opacity .16s ease;
- transform-origin:center;will-change:transform,opacity,height;
+.swipeRow{
+ position:relative;min-height:65px;overflow:hidden;border-bottom:1px solid var(--line);
+ background:#ff453a;touch-action:pan-y;
 }
-.item:last-child{border-bottom:0}
-.itemName{min-width:0;width:100%;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .12s ease,transform .16s ease}
-.item.removing{
+.swipeRow:last-child{border-bottom:0}
+.deleteAction{
+ position:absolute;top:0;right:0;bottom:0;width:92px;border:0;border-radius:0;
+ background:#ff453a;color:#fff;font-size:14px;font-weight:800;display:grid;place-items:center;
+}
+.item{
+ position:relative;z-index:1;display:flex;align-items:center;min-height:65px;padding:0 17px;
+ background:var(--glass);transform:translateX(0);will-change:transform;
+ touch-action:pan-y;-webkit-user-select:none;user-select:none;
+}
+.itemName{min-width:0;width:100%;font-size:21px;font-weight:500;letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.swipeRow.removing{
  pointer-events:none;
  animation:itemDone .32s cubic-bezier(.22,.8,.32,1) forwards;
 }
-.item.removing .itemName{animation:itemTextDone .18s ease forwards}
+.swipeRow.removing .itemName{animation:itemTextDone .18s ease forwards}
 @keyframes itemTextDone{
  0%{opacity:1;transform:translateX(0)}
  100%{opacity:.28;transform:translateX(5px)}
@@ -116,6 +123,7 @@ h1{margin:0;font-size:38px;line-height:.95;letter-spacing:-.055em;font-weight:95
 @media(prefers-color-scheme:dark){
  .shareBtn,.glass,.list,.empty{box-shadow:0 24px 60px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.05)}
  .addBox input{background:rgba(255,255,255,.06)}
+ .item{background:rgba(22,33,51,.96)}
 }
 .doneOverlay{
  position:fixed;inset:0;z-index:9999;pointer-events:none;
