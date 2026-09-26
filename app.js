@@ -164,7 +164,6 @@ async function del(id,el){
   if(!id||!el||el.classList.contains('removing'))return;
   const previous=items.slice();
   const removed=items.find(x=>x.id===id);
-  feedback();
   el.classList.add('removing');
   await new Promise(resolve=>setTimeout(resolve,320));
   items=items.filter(x=>x.id!==id);
