@@ -28,14 +28,16 @@
     *{box-sizing:border-box}
     html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
     body{min-height:100svh}
-    button,input,textarea{font:inherit}
+    button,input,textarea,select{font:inherit}
     button{cursor:pointer}
     .app{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 100px)}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
     .title-wrap{min-width:0}
     .eyebrow{font-size:13px;color:var(--muted);font-weight:600}
     h1{font-size:30px;line-height:1.05;margin:2px 0 0;letter-spacing:-.03em}
-    .circle-btn{width:44px;height:44px;border:0;border-radius:50%;background:var(--card2);color:var(--text);box-shadow:var(--shadow);font-size:25px;display:grid;place-items:center}
+    .top-actions{display:flex;gap:8px;align-items:center}
+    .circle-btn{width:44px;height:44px;border:0;border-radius:50%;background:var(--card2);color:var(--text);box-shadow:var(--shadow);font-size:20px;display:grid;place-items:center}
+    .import-btn{border:0;border-radius:14px;background:var(--card2);color:var(--text);box-shadow:var(--shadow);padding:11px 12px;font-size:13px;font-weight:800}
     .stats{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin-bottom:12px}
     .stat{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow)}
     .stat .label{font-size:13px;color:var(--muted);font-weight:600}
@@ -91,6 +93,9 @@
     .scan-status.show{display:block}
     .scan-status.ok{color:var(--accent)}
     .scan-status.err{color:var(--danger)}
+    .progressbar{height:5px;border-radius:999px;background:var(--chip);overflow:hidden;margin-top:6px}
+    .progressbar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+    .remaining{font-size:13px;color:var(--muted);font-weight:700;margin-top:4px}
     .barcode-card{margin-top:14px;background:#fff;border-radius:18px;padding:14px 10px;text-align:center;overflow:hidden}
     .barcode-card svg{width:100%;max-width:520px;height:auto}
     .barcode-number{font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace;color:#111;margin-top:4px;word-break:break-all}
@@ -113,7 +118,11 @@
         <div class="eyebrow">COOP · voucher e buoni</div>
         <h1>Buoni Spesa</h1>
       </div>
-      <button class="circle-btn" id="settingsBtn" aria-label="Informazioni">•••</button>
+      <div class="top-actions">
+        <button class="import-btn" id="bulkImportBtn">Importa PDF</button>
+        <button class="circle-btn" id="settingsBtn" aria-label="Informazioni">•••</button>
+      </div>
+      <input id="bulkPdfInput" type="file" accept="application/pdf" multiple hidden>
     </div>
 
     <section class="stats">
@@ -159,24 +168,32 @@
             <input id="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="20">
           </div>
           <div class="field">
-            <label for="expiry">Scadenza / giorno di utilizzo</label>
+            <label for="validFrom">Valido dal</label>
+            <input id="validFrom" type="date">
+          </div>
+          <div class="field">
+            <label for="expiry">Valido fino al</label>
             <input id="expiry" type="date">
           </div>
           <div class="field">
             <label for="barcode">Codice a barre</label>
-            <input id="barcode" inputmode="numeric" autocomplete="off" placeholder="Viene letto dalla foto">
+            <input id="barcode" inputmode="text" autocomplete="off" placeholder="Viene letto dal documento">
+          </div>
+          <div class="field">
+            <label for="minSpend">Spesa minima (€)</label>
+            <input id="minSpend" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Es. 30">
           </div>
           <div class="field full">
-            <label>Tipo di validità</label>
-            <label class="check">
-              <input id="singleDay" type="checkbox">
-              <span>Utilizzabile solo nel giorno indicato</span>
-            </label>
+            <label>Tipo di buono</label>
+            <select id="voucherKind" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:14px;padding:12px">
+              <option value="balance">Buono spesa a scalare</option>
+              <option value="discount">Buono sconto monouso</option>
+            </select>
           </div>
           <div class="field full">
             <label for="document">Foto o PDF del buono</label>
-            <input id="document" type="file" accept="image/*,application/pdf" capture="environment">
-            <div class="tiny" id="fileHint">Fotografa bene il buono: se il codice a barre è visibile provo a leggerlo automaticamente.</div>
+            <input id="document" type="file" accept="image/*,application/pdf" multiple>
+            <div class="tiny" id="fileHint">Puoi selezionare anche fronte e retro. L'app prova a leggere valore, date e barcode dal contenuto.</div>
             <div class="scan-status" id="scanStatus"></div>
           </div>
           <div class="field full">
@@ -206,14 +223,15 @@
         <h2>Come funziona</h2>
         <button class="x" data-close="infoDialog">×</button>
       </div>
-      <p class="note">I buoni e i documenti restano salvati sul dispositivo in questa PWA. Quando carichi una foto, l'app prova a leggere automaticamente il codice a barre e lo salva con il voucher.</p>
-      <p class="note">Per i buoni con un giorno preciso, attiva “Utilizzabile solo nel giorno indicato”: saranno messi in evidenza automaticamente quando la data si avvicina.</p>
+      <p class="note">I buoni e i documenti restano salvati sul dispositivo. L'app legge il contenuto, non una grafica fissa: prova a riconoscere importo, barcode e date anche se Coop cambia formato.</p>
+      <p class="note">I buoni spesa da 20/50 € possono essere gestiti a scalare: registri l'importo utilizzato e l'app conserva il residuo. I buoni sconto da 5 € possono invece avere una finestra di validità e una spesa minima.</p>
       <p class="note"><strong>Nota promemoria:</strong> su iPhone una PWA statica non può garantire notifiche programmate quando è chiusa. Per ora la schermata segnala chiaramente le scadenze ogni volta che la apri.</p>
     </div>
   </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 const DB_NAME='buoni-spesa-db', STORE='vouchers', DB_VERSION=1;
 let db, vouchers=[], filter='active';
@@ -240,14 +258,21 @@ function daysLeft(v){
   if(!v.expiry) return null;
   return Math.round((localDate(v.expiry)-todayMid())/86400000);
 }
+function daysUntilStart(v){
+  if(!v.validFrom) return null;
+  return Math.round((localDate(v.validFrom)-todayMid())/86400000);
+}
 function eur(n){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(Number(n)||0)}
 function fmtDate(iso){if(!iso)return 'Senza scadenza';return localDate(iso).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})}
 function status(v){
-  if(v.used) return {key:'used',label:'Usato',cls:''};
+  const remaining=(v.remaining ?? v.amount ?? 0);
+  if(v.used || (v.voucherKind!=='discount' && Number(remaining)<=0)) return {key:'used',label:'Esaurito',cls:''};
+  const s=daysUntilStart(v);
+  if(s!==null && s>0) return {key:'upcoming',label:s===1?'Da domani':'Dal '+fmtDate(v.validFrom),cls:'soon'};
   const d=daysLeft(v);
   if(d===null) return {key:'active',label:'Valido',cls:''};
   if(d<0) return {key:'expired',label:'Scaduto',cls:''};
-  if(d===0) return {key:'today',label:v.singleDay?'Solo oggi':'Scade oggi',cls:'today'};
+  if(d===0) return {key:'today',label:'Scade oggi',cls:'today'};
   if(d<=3) return {key:'urgent',label:'Scade tra '+d+'g',cls:'urgent'};
   if(d<=7) return {key:'soon',label:'Scade tra '+d+'g',cls:'soon'};
   return {key:'active',label:'Scade '+fmtDate(v.expiry),cls:''};
@@ -265,10 +290,10 @@ async function refresh(){
   render();
 }
 function render(){
-  const active=vouchers.filter(v=>!v.used && status(v).key!=='expired');
-  document.getElementById('totalValue').textContent=eur(active.reduce((s,v)=>s+(Number(v.amount)||0),0));
+  const active=vouchers.filter(v=>!v.used && ['active','today','urgent','soon'].includes(status(v).key));
+  document.getElementById('totalValue').textContent=eur(active.reduce((s,v)=>s+(Number(v.voucherKind==='balance'?(v.remaining ?? v.amount):v.amount)||0),0));
   document.getElementById('activeCount').textContent=active.length;
-  const urgent=active.filter(v=>{const d=daysLeft(v);return d!==null&&d<=3});
+  const urgent=vouchers.filter(v=>!v.used && ((daysLeft(v)!==null&&daysLeft(v)>=0&&daysLeft(v)<=3)||(daysUntilStart(v)!==null&&daysUntilStart(v)>=0&&daysUntilStart(v)<=2)));
   const alert=document.getElementById('alertBox');
   if(urgent.length){
     alert.classList.add('show');
@@ -276,8 +301,8 @@ function render(){
   } else alert.classList.remove('show');
 
   let visible=vouchers;
-  if(filter==='active') visible=vouchers.filter(v=>!v.used && status(v).key!=='expired');
-  if(filter==='soon') visible=vouchers.filter(v=>!v.used && ['today','urgent','soon'].includes(status(v).key));
+  if(filter==='active') visible=vouchers.filter(v=>!v.used && !['expired','upcoming'].includes(status(v).key));
+  if(filter==='soon') visible=vouchers.filter(v=>!v.used && ['today','urgent','soon','upcoming'].includes(status(v).key));
   if(filter==='used') visible=vouchers.filter(v=>v.used);
   const list=document.getElementById('voucherList');
   if(!visible.length){
@@ -286,13 +311,14 @@ function render(){
   }
   list.innerHTML=visible.map(v=>{
     const st=status(v), cls=['voucher',v.used?'used':'',st.key==='expired'?'expired':'',['today','urgent'].includes(st.key)?'urgent':''].join(' ');
-    const usage=v.singleDay&&v.expiry?'<span>Solo il '+fmtDate(v.expiry)+'</span>':(v.expiry?'<span>Scadenza '+fmtDate(v.expiry)+'</span>':'<span>Senza scadenza</span>');
-    const doc=v.fileBlob?'<span>📎 Documento</span>':'';
+    const usage=v.validFrom&&v.expiry?'<span>'+fmtDate(v.validFrom)+' → '+fmtDate(v.expiry)+'</span>':(v.expiry?'<span>Scadenza '+fmtDate(v.expiry)+'</span>':'<span>Senza scadenza</span>');
+    const doc=((v.attachments&&v.attachments.length)||v.fileBlob)?'<span>📎 Documento</span>':'';
     const bc=v.barcode?'<span>▥ Barcode</span>':'';
+    const rem=v.voucherKind==='balance'?'<div class="remaining">Residuo '+eur(v.remaining ?? v.amount)+'</div>':'';
     return '<article class="'+cls+'">'+
-      '<div class="vrow"><div><div class="merchant">'+escapeHtml(v.merchant||'Buono')+'</div><div class="amount">'+eur(v.amount)+'</div></div><div class="badge '+st.cls+'">'+st.label+'</div></div>'+
+      '<div class="vrow"><div><div class="merchant">'+escapeHtml(v.merchant||'Buono')+'</div><div class="amount">'+eur(v.amount)+'</div>'+rem+'</div><div class="badge '+st.cls+'">'+st.label+'</div></div>'+
       '<div class="meta">'+usage+doc+bc+(v.note?'<span>📝 '+escapeHtml(v.note).slice(0,46)+'</span>':'')+'</div>'+
-      '<div class="actions"><button class="primary" onclick="toggleUsed(\''+v.id+'\')">'+(v.used?'Rimetti da usare':'Segna usato')+'</button><button class="secondary" onclick="openDetail(\''+v.id+'\')">Apri</button></div>'+
+      '<div class="actions"><button class="primary" onclick="openDetail(\''+v.id+'\')">'+(v.voucherKind==='balance'?'Usa buono':(v.used?'Gestisci':'Apri buono'))+'</button><button class="secondary" onclick="openDetail(\''+v.id+'\')">Apri</button></div>'+
     '</article>';
   }).join('');
 }
@@ -301,76 +327,157 @@ window.toggleUsed=async function(id){
   const v=vouchers.find(x=>x.id===id); if(!v)return;
   v.used=!v.used; v.usedAt=v.used?Date.now():null; await put(v); await refresh();
 }
-function jsBarcodeFormat(format=''){
-  const f=String(format).toLowerCase();
-  if(f.includes('ean_13')||f==='ean13') return 'EAN13';
-  if(f.includes('ean_8')||f==='ean8') return 'EAN8';
-  if(f.includes('upc_a')||f==='upc_a'||f==='upc') return 'UPC';
-  if(f.includes('code_39')||f.includes('code39')) return 'CODE39';
-  if(f.includes('codabar')) return 'codabar';
-  if(f.includes('itf')) return 'ITF14';
-  return 'CODE128';
+function normalizeDateDMY(s){
+  const m=String(s||'').match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+  if(!m) return '';
+  let y=Number(m[3]); if(y<100)y+=2000;
+  return String(y).padStart(4,'0')+'-'+String(Number(m[2])).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');
 }
-function drawBarcode(v){
-  if(!v?.barcode || typeof JsBarcode==='undefined') return;
-  const el=document.getElementById('barcodeSvg');
-  if(!el) return;
-  try{
-    JsBarcode(el,v.barcode,{format:jsBarcodeFormat(v.barcodeFormat),displayValue:false,height:90,margin:4,background:'#ffffff',lineColor:'#111111'});
-  }catch(e){
-    try{JsBarcode(el,v.barcode,{format:'CODE128',displayValue:false,height:90,margin:4,background:'#ffffff',lineColor:'#111111'});}catch(_){}
+const IT_MONTHS={gennaio:1,febbraio:2,marzo:3,aprile:4,maggio:5,giugno:6,luglio:7,agosto:8,settembre:9,ottobre:10,novembre:11,dicembre:12};
+function isoFromItalianDayMonth(day,monthName,yearHint){
+  const m=IT_MONTHS[String(monthName).toLowerCase()]; if(!m)return '';
+  let y=yearHint||new Date().getFullYear();
+  return y+'-'+String(m).padStart(2,'0')+'-'+String(Number(day)).padStart(2,'0');
+}
+function parseVoucherText(text){
+  const t=String(text||'').replace(/\s+/g,' ').trim();
+  const low=t.toLowerCase();
+  let amount=null,minSpend=null,validFrom='',expiry='',barcode='',voucherKind='balance';
+
+  let m=t.match(/Valido\s+fino\s+al\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})/i);
+  if(m) expiry=normalizeDateDMY(m[1]);
+
+  const range=low.match(/dal\s+(\d{1,2})\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+al\s+(\d{1,2})\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)/i);
+  if(range){
+    const now=new Date(), y=now.getFullYear();
+    validFrom=isoFromItalianDayMonth(range[1],range[2],y);
+    expiry=isoFromItalianDayMonth(range[3],range[4],IT_MONTHS[range[4].toLowerCase()]<IT_MONTHS[range[2].toLowerCase()]?y+1:y);
   }
+
+  const gs1=t.match(/\(01\)\s*\d{14}\s*\(21\)\s*[0-9A-Za-z]+/);
+  if(gs1) barcode=gs1[0].replace(/\s/g,'');
+
+  const min=t.match(/ogni\s*(\d+(?:[.,]\d+)?)\s*€/i);
+  if(min) minSpend=Number(min[1].replace(',','.'));
+
+  if(/buono\s+sconto/i.test(t)) voucherKind='discount';
+  if(/spendibile\s+in\s+pi[uù]\s+soluzioni/i.test(t)) voucherKind='balance';
+
+  const euroVals=[...t.matchAll(/(?:€\s*|\b)(\d{1,3}(?:[.,]\d{1,2})?)\s*€/g)].map(x=>Number(x[1].replace(',','.'))).filter(x=>x>0&&x<=500);
+  if(euroVals.length){
+    if(minSpend!=null){
+      const others=euroVals.filter(x=>Math.abs(x-minSpend)>0.001);
+      if(others.length) amount=Math.min(...others);
+    }
+    if(amount==null) amount=Math.min(...euroVals);
+  }
+  return {amount,minSpend,validFrom,expiry,barcode,voucherKind,text:t};
 }
-async function detectBarcodeFromFile(file){
-  if(!file || !file.type.startsWith('image/')) return null;
+async function pdfToCanvasAndText(file){
+  if(!window.pdfjsLib) return {text:'',canvas:null};
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  const data=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data}).promise;
+  const page=await pdf.getPage(1);
+  const tc=await page.getTextContent();
+  const text=tc.items.map(x=>x.str).join(' ');
+  const viewport=page.getViewport({scale:1.7});
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
+  await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+  return {text,canvas};
+}
+async function ocrCanvasOrFile(source){
+  if(!window.Tesseract) return '';
+  try{
+    const r=await Tesseract.recognize(source,'ita',{logger:m=>{
+      const ss=document.getElementById('scanStatus');
+      if(ss && m.status==='recognizing text' && typeof m.progress==='number'){
+        ss.textContent='Lettura testo… '+Math.round(m.progress*100)+'%';
+        ss.className='scan-status show';
+      }
+    }});
+    return r?.data?.text||'';
+  }catch(e){return ''}
+}
+async function detectBarcodeFromSource(source){
   if('BarcodeDetector' in window){
     try{
       const formats=await BarcodeDetector.getSupportedFormats();
       const detector=new BarcodeDetector({formats});
-      const bitmap=await createImageBitmap(file);
-      const codes=await detector.detect(bitmap);
-      bitmap.close?.();
+      const codes=await detector.detect(source);
       if(codes?.length) return {value:codes[0].rawValue,format:codes[0].format||''};
     }catch(e){}
   }
-  if(window.ZXing){
-    const url=URL.createObjectURL(file);
-    try{
-      const reader=new ZXing.BrowserMultiFormatReader();
-      const result=await reader.decodeFromImageUrl(url);
-      const fmt=ZXing.BarcodeFormat?.[result.getBarcodeFormat?.()] || '';
-      return {value:result.getText(),format:String(fmt)};
-    }catch(e){
-      return null;
-    }finally{
-      URL.revokeObjectURL(url);
-    }
-  }
   return null;
+}
+async function analyzeFile(file,{ocr=true}={}){
+  let text='',canvas=null,barcode=null;
+  if(file.type==='application/pdf'){
+    const p=await pdfToCanvasAndText(file); text=p.text; canvas=p.canvas;
+    barcode=await detectBarcodeFromSource(canvas);
+    if(ocr) text+=' '+await ocrCanvasOrFile(canvas);
+  }else if(file.type.startsWith('image/')){
+    const bmp=await createImageBitmap(file);
+    barcode=await detectBarcodeFromSource(bmp);
+    if(ocr) text=await ocrCanvasOrFile(file);
+    bmp.close?.();
+  }
+  const parsed=parseVoucherText(text);
+  if(barcode?.value && !parsed.barcode) parsed.barcode=barcode.value;
+  parsed.barcodeFormat=barcode?.format||'';
+  return parsed;
+}
+function mergeAnalysis(list){
+  const out={amount:null,minSpend:null,validFrom:'',expiry:'',barcode:'',barcodeFormat:'',voucherKind:'balance'};
+  for(const x of list){
+    if(out.amount==null && x.amount!=null) out.amount=x.amount;
+    if(out.minSpend==null && x.minSpend!=null) out.minSpend=x.minSpend;
+    if(!out.validFrom && x.validFrom) out.validFrom=x.validFrom;
+    if(!out.expiry && x.expiry) out.expiry=x.expiry;
+    if(!out.barcode && x.barcode){out.barcode=x.barcode;out.barcodeFormat=x.barcodeFormat||''}
+    if(x.voucherKind==='discount') out.voucherKind='discount';
+  }
+  return out;
 }
 
 window.openDetail=function(id){
   const v=vouchers.find(x=>x.id===id); if(!v)return;
   document.getElementById('detailTitle').textContent=(v.merchant||'Buono')+' · '+eur(v.amount);
   const st=status(v);
-  let doc='<div class="doc"><div class="note">Nessun documento allegato.</div></div>';
-  if(v.fileBlob){
-    const url=URL.createObjectURL(v.fileBlob);
-    if((v.fileType||'').startsWith('image/')) doc='<div class="doc"><img src="'+url+'" alt="Documento buono"></div>';
-    else if(v.fileType==='application/pdf') doc='<div class="doc"><iframe src="'+url+'" title="Documento buono"></iframe></div>';
-    else doc='<div class="doc"><a href="'+url+'" target="_blank">Apri documento</a></div>';
+  let docs=(v.attachments||[]).slice();
+  if(!docs.length && v.fileBlob) docs=[{blob:v.fileBlob,type:v.fileType||'',name:v.fileName||''}];
+  let doc=docs.length?'':'<div class="doc"><div class="note">Nessun documento allegato.</div></div>';
+  for(const a of docs){
+    const url=URL.createObjectURL(a.blob);
+    if((a.type||'').startsWith('image/')) doc+='<div class="doc"><img src="'+url+'" alt="Documento buono"></div>';
+    else if(a.type==='application/pdf') doc+='<div class="doc"><iframe src="'+url+'" title="Documento buono"></iframe></div>';
+    else doc+='<div class="doc"><a href="'+url+'" target="_blank">Apri documento</a></div>';
   }
-  const barcodeBlock=v.barcode
-    ? '<div class="barcode-card"><div class="barcode-label">CODICE A BARRE DEL BUONO</div><svg id="barcodeSvg"></svg><div class="barcode-number">'+escapeHtml(v.barcode)+'</div></div>'
-    : '';
+  const rem=(v.remaining ?? v.amount ?? 0);
+  const barcodeBlock=v.barcode?'<div class="barcode-card"><div class="barcode-label">CODICE RILEVATO</div><div class="barcode-number">'+escapeHtml(v.barcode)+'</div><div class="tiny" style="color:#666;margin-top:6px">Per la cassa usa il barcode del documento originale qui sotto.</div></div>':'';
+  const validText=v.validFrom&&v.expiry?'Valido '+fmtDate(v.validFrom)+' → '+fmtDate(v.expiry):(v.expiry?'Scadenza '+fmtDate(v.expiry):'Senza scadenza');
   document.getElementById('detailContent').innerHTML=
     '<div class="amount">'+eur(v.amount)+'</div>'+
-    '<div class="meta"><span>'+st.label+'</span><span>'+(v.singleDay&&v.expiry?'Solo il '+fmtDate(v.expiry):v.expiry?'Scadenza '+fmtDate(v.expiry):'Senza scadenza')+'</span></div>'+
+    (v.voucherKind==='balance'?'<div class="remaining">Residuo: '+eur(rem)+'</div>':'')+
+    '<div class="meta"><span>'+st.label+'</span><span>'+validText+'</span>'+(v.minSpend?'<span>Spesa minima '+eur(v.minSpend)+'</span>':'')+'</div>'+
     barcodeBlock+
     (v.note?'<p class="note">'+escapeHtml(v.note)+'</p>':'')+doc+
-    '<div class="actions" style="margin-top:14px"><button class="primary" id="detailUsed">'+(v.used?'Rimetti da usare':'Segna come usato')+'</button><button class="secondary" id="detailEdit">Modifica</button></div>';
-  drawBarcode(v);
-  document.getElementById('detailUsed').onclick=async()=>{await toggleUsed(v.id);document.getElementById('detailDialog').close()};
+    '<div class="actions" style="margin-top:14px"><button class="primary" id="detailUsed">'+(v.voucherKind==='balance'?'Registra utilizzo':(v.used?'Rimetti da usare':'Segna come usato'))+'</button><button class="secondary" id="detailEdit">Modifica</button></div>';
+  document.getElementById('detailUsed').onclick=async()=>{
+    if(v.voucherKind==='balance'){
+      const current=Number(v.remaining ?? v.amount ?? 0);
+      const raw=prompt('Quanto hai utilizzato? Residuo attuale '+eur(current),String(current));
+      if(raw===null)return;
+      const spent=Number(String(raw).replace(',','.'));
+      if(!Number.isFinite(spent)||spent<=0){alert('Inserisci un importo valido.');return;}
+      v.remaining=Math.max(0,current-spent);
+      if(v.remaining<=0){v.used=true;v.usedAt=Date.now()}
+      await put(v); await refresh(); document.getElementById('detailDialog').close();
+    }else{
+      await toggleUsed(v.id);document.getElementById('detailDialog').close();
+    }
+  };
   document.getElementById('detailEdit').onclick=()=>{document.getElementById('detailDialog').close();openEdit(v)};
   document.getElementById('detailDialog').showModal();
 }
@@ -379,14 +486,16 @@ function openEdit(v=null){
   document.getElementById('merchant').value=v?.merchant||'Coop';
   document.getElementById('voucherId').value=v?.id||'';
   document.getElementById('amount').value=v?.amount??'';
+  document.getElementById('validFrom').value=v?.validFrom||'';
   document.getElementById('expiry').value=v?.expiry||'';
   document.getElementById('barcode').value=v?.barcode||'';
   document.getElementById('barcode').dataset.format=v?.barcodeFormat||'';
-  document.getElementById('singleDay').checked=!!v?.singleDay;
+  document.getElementById('minSpend').value=v?.minSpend??'';
+  document.getElementById('voucherKind').value=v?.voucherKind||'balance';
   document.getElementById('note').value=v?.note||'';
   document.getElementById('formTitle').textContent=v?'Modifica buono':'Nuovo buono';
   document.getElementById('deleteBtn').hidden=!v;
-  document.getElementById('fileHint').textContent=v?.fileBlob?'Documento già presente. Se ne scegli un altro verrà sostituito e rileggo il barcode.':'Fotografa bene il buono: provo a leggere automaticamente il codice a barre.';
+  document.getElementById('fileHint').textContent=(v?.attachments?.length||v?.fileBlob)?'Documento già presente. Se selezioni nuovi file verranno sostituiti e riletti.':'Puoi selezionare fronte e retro oppure un PDF.';
   const ss=document.getElementById('scanStatus'); ss.className='scan-status'; ss.textContent='';
   document.getElementById('editDialog').showModal();
 }
@@ -398,33 +507,56 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
 });
 
 document.getElementById('document').addEventListener('change',async e=>{
-  const file=e.target.files?.[0];
+  const files=[...(e.target.files||[])];
   const ss=document.getElementById('scanStatus');
-  if(!file){ss.className='scan-status';return;}
-  if(!file.type.startsWith('image/')){
-    ss.textContent='PDF salvato. Per leggere automaticamente il barcode usa una foto o immagine del buono.';
-    ss.className='scan-status show';
-    return;
+  if(!files.length){ss.className='scan-status';return;}
+  ss.textContent='Analizzo '+files.length+' file…'; ss.className='scan-status show';
+  const analyses=[];
+  for(let i=0;i<files.length;i++){
+    ss.textContent='Analizzo '+(i+1)+' di '+files.length+'…';
+    analyses.push(await analyzeFile(files[i],{ocr:true}));
   }
-  ss.textContent='Sto leggendo il codice a barre…';
-  ss.className='scan-status show';
-  const found=await detectBarcodeFromFile(file);
-  if(found?.value){
-    document.getElementById('barcode').value=found.value;
-    document.getElementById('barcode').dataset.format=found.format||'';
-    ss.textContent='✓ Codice a barre letto: '+found.value;
-    ss.className='scan-status show ok';
-  }else{
-    ss.textContent='Non riesco a leggere il barcode da questa immagine. Prova con una foto più vicina e nitida oppure inserisci il numero a mano.';
-    ss.className='scan-status show err';
+  const a=mergeAnalysis(analyses);
+  if(a.amount!=null) document.getElementById('amount').value=a.amount;
+  if(a.validFrom) document.getElementById('validFrom').value=a.validFrom;
+  if(a.expiry) document.getElementById('expiry').value=a.expiry;
+  if(a.minSpend!=null) document.getElementById('minSpend').value=a.minSpend;
+  if(a.barcode){document.getElementById('barcode').value=a.barcode;document.getElementById('barcode').dataset.format=a.barcodeFormat||''}
+  document.getElementById('voucherKind').value=a.voucherKind||'balance';
+  ss.textContent='✓ Lettura completata. Controlla i dati prima di salvare.';
+  ss.className='scan-status show ok';
+});
+
+document.getElementById('bulkImportBtn').onclick=()=>document.getElementById('bulkPdfInput').click();
+document.getElementById('bulkPdfInput').addEventListener('change',async e=>{
+  const files=[...(e.target.files||[])];
+  if(!files.length)return;
+  let imported=0,review=0;
+  for(let i=0;i<files.length;i++){
+    document.getElementById('bulkImportBtn').textContent='Lettura '+(i+1)+'/'+files.length;
+    const a=await analyzeFile(files[i],{ocr:true});
+    const amount=Number(a.amount||0);
+    const id=crypto.randomUUID();
+    if(a.barcode && vouchers.some(x=>x.barcode===a.barcode)) continue;
+    const v={
+      id,merchant:'Coop',amount,remaining:amount,validFrom:a.validFrom||'',expiry:a.expiry||'',
+      barcode:a.barcode||'',barcodeFormat:a.barcodeFormat||'',minSpend:a.minSpend||null,
+      voucherKind:a.voucherKind||'balance',note:'',used:false,usedAt:null,createdAt:Date.now(),
+      attachments:[{blob:files[i],name:files[i].name,type:files[i].type}]
+    };
+    await put(v); imported++; if(!amount||!a.expiry||!a.barcode) review++;
   }
+  document.getElementById('bulkImportBtn').textContent='Importa PDF';
+  e.target.value='';
+  await refresh();
+  alert('Importati '+imported+' buoni.'+(review?' '+review+' richiedono un controllo dei dati.':''));
 });
 
 document.getElementById('voucherForm').onsubmit=async e=>{
   e.preventDefault();
   const id=document.getElementById('voucherId').value||crypto.randomUUID();
   const existing=vouchers.find(x=>x.id===id);
-  const file=document.getElementById('document').files[0];
+  const selectedFiles=[...(document.getElementById('document').files||[])];
   const barcodeValue=document.getElementById('barcode').value.trim();
   if(barcodeValue && vouchers.some(x=>x.id!==id && x.barcode===barcodeValue)){
     alert('Questo codice a barre è già presente tra i tuoi buoni.');
@@ -434,17 +566,21 @@ document.getElementById('voucherForm').onsubmit=async e=>{
     id,
     merchant:document.getElementById('merchant').value.trim()||'Coop',
     amount:Number(document.getElementById('amount').value||0),
+    remaining:existing?.remaining ?? Number(document.getElementById('amount').value||0),
+    validFrom:document.getElementById('validFrom').value||'',
     expiry:document.getElementById('expiry').value||'',
     barcode:document.getElementById('barcode').value.trim(),
     barcodeFormat:document.getElementById('barcode').dataset.format||existing?.barcodeFormat||'',
-    singleDay:document.getElementById('singleDay').checked,
+    minSpend:Number(document.getElementById('minSpend').value||0)||null,
+    voucherKind:document.getElementById('voucherKind').value||'balance',
     note:document.getElementById('note').value.trim(),
     used:existing?.used||false,
     usedAt:existing?.usedAt||null,
     createdAt:existing?.createdAt||Date.now(),
-    fileBlob:file||existing?.fileBlob||null,
-    fileName:file?.name||existing?.fileName||'',
-    fileType:file?.type||existing?.fileType||''
+    attachments:selectedFiles.length?selectedFiles.map(file=>({blob:file,name:file.name,type:file.type})):(existing?.attachments||[]),
+    fileBlob:existing?.fileBlob||null,
+    fileName:existing?.fileName||'',
+    fileType:existing?.fileType||''
   };
   await put(v); document.getElementById('editDialog').close(); await refresh();
 };
