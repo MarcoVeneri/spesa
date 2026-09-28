@@ -1,7 +1,7 @@
 const API='https://nlhxjpartgvplythgzrz.supabase.co';
 const KEY='sb_publishable_uA9EbSMwJ5oFraqP-r5njg_EXtLSjEH';
 const LS_TOKEN='spesa_shared_token',LS_CACHE='spesa_items_cache',LS_TRASH='spesa_trash_cache';
-let token='',items=[],loading=false;
+let token='',items=[],loading=false,refreshSeq=0;
 const $=s=>document.querySelector(s);
 
 function toast(m){
@@ -89,22 +89,26 @@ function render(){
   openSwipe=null;
   bindAllSwipes();
 }
-async function refresh(silent=false){
-  if(!token||loading)return;
+async function refresh(silent=false,force=false){
+  if(!token)return;
+  if(loading&&!force)return;
+  const seq=++refreshSeq;
   loading=true;
   try{
     const d=await rpc('shopping_get_items',{p_token:token});
+    if(seq!==refreshSeq)return;
     items=Array.isArray(d)?d:[];
     localStorage.setItem(LS_CACHE,JSON.stringify(items));
     $('#status').textContent='Sincronizzata';
     render();
   }catch{
+    if(seq!==refreshSeq)return;
     items=cached();
     render();
     $('#status').textContent=navigator.onLine?'Errore':'Offline';
     if(!silent)toast('Connessione non disponibile');
   }finally{
-    loading=false;
+    if(seq===refreshSeq)loading=false;
   }
 }
 async function add(){
@@ -113,13 +117,29 @@ async function add(){
   if(!name)return;
   input.value='';
   try{
-    await rpc('shopping_add_item',{
+    const id=await rpc('shopping_add_item',{
       p_token:token,
       p_name:name,
       p_quantity:null,
       p_category:'Altro'
     });
-    await refresh(true);
+
+    // Il database ha confermato l'inserimento: aggiorna subito la UI.
+    // Il refresh forzato subito dopo riallinea poi l'elenco autorevole online.
+    const newItem={
+      id:String(id||''),
+      name,
+      quantity:null,
+      category:'Altro',
+      checked:false,
+      created_at:new Date().toISOString()
+    };
+    items=[newItem,...items.filter(x=>String(x.id)!==String(newItem.id))];
+    localStorage.setItem(LS_CACHE,JSON.stringify(items));
+    $('#status').textContent='Sincronizzata';
+    render();
+
+    await refresh(true,true);
     input.focus();
   }catch{
     input.value=name;
