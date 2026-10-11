@@ -3,54 +3,95 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f3f7ff">
+<meta name="theme-color" content="#dfeafa" media="(prefers-color-scheme:light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme:dark)">
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Spesa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=22">
-<title>Spesa</title>
+<link rel="stylesheet" href="styles.css?v=23">
+<title>Lista della Spesa</title>
 </head>
 <body>
-<main class="app">
-  <header class="top">
-    <div>
-      <div class="eyebrow">LISTA CONDIVISA</div>
-      <h1>Spesa</h1>
-    </div>
-    <button id="shareBtn" class="shareBtn" type="button" aria-label="Condividi lista">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 11v8h14v-8"/></svg>
-    </button>
-  </header>
+<div class="ambient ambientA"></div>
+<div class="ambient ambientB"></div>
 
-  <section id="setup" class="glass setup" hidden>
-    <h2>Collega la lista</h2>
-    <p>Inserisci il codice condiviso una sola volta su questo dispositivo.</p>
-    <input id="codeInput" placeholder="Codice lista" autocomplete="off">
-    <button id="saveCode">Collega</button>
-  </section>
+<div class="shell">
+  <aside class="sidebar" aria-label="Navigazione">
+    <div class="brand">Lista della Spesa</div>
+    <div class="navItem active"><span>▤</span> Lista</div>
+    <div class="navItem"><span>✓</span> Acquistati</div>
+    <div class="navItem"><span>▥</span> Statistiche</div>
+    <div class="navItem"><span>⚙</span> Impostazioni</div>
+    <div class="profile"><span class="profileBubble">MB</span><span>Marco</span><span class="chev">⌄</span></div>
+  </aside>
 
-  <section id="main" hidden>
-    <div class="glass addBox">
-      <input id="itemInput" placeholder="Cosa serve?" autocomplete="off" enterkeyhint="done">
-      <button id="addBtn" type="button" aria-label="Aggiungi">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+  <main class="app">
+    <header class="top">
+      <div>
+        <h1>Lista della Spesa</h1>
+        <p class="subtitle">Tutto quello che ti serve, sempre con te</p>
+      </div>
+      <button id="shareBtn" class="shareBtn" type="button" aria-label="Condividi lista" title="Condividi">
+        <span class="dots">•••</span>
       </button>
-      <button id="trashBtn" class="trashTop" type="button" aria-label="Recupera articoli eliminati">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/></svg>
-      </button>
-    </div>
+    </header>
 
-    <div class="listHead">
-      <span id="count">0 articoli</span>
-      <span id="status" class="status">Sincronizzata</span>
-    </div>
+    <section id="setup" class="glass setup" hidden>
+      <h2>Collega la lista</h2>
+      <p>Inserisci il codice condiviso una sola volta su questo dispositivo.</p>
+      <input id="codeInput" placeholder="Codice lista" autocomplete="off">
+      <button id="saveCode">Collega</button>
+    </section>
 
-    <div id="content"></div>
-  </section>
-</main>
+    <section id="main" hidden>
+      <div class="stats" aria-label="Riepilogo lista">
+        <div class="statCard">
+          <strong id="count">0 articoli</strong>
+          <span>Da comprare</span>
+        </div>
+        <div class="statCard">
+          <strong>✓</strong>
+          <span>Lista condivisa</span>
+        </div>
+        <div class="statCard">
+          <strong>▥</strong>
+          <span id="status" class="status">Sincronizzata</span>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div class="listPanel">
+          <div id="content"></div>
+        </div>
+
+        <div class="sidePanel">
+          <div class="sideCard">
+            <div class="sideCardTitle">Sempre sincronizzata</div>
+            <div class="sideCardText">La lista resta aggiornata su tutti i tuoi dispositivi.</div>
+          </div>
+          <div class="sideCard compactCard">
+            <div class="sideCardTitle">Inserimento rapido</div>
+            <div class="sideCardText">Scrivi un articolo e premi la freccia.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass addBox">
+        <input id="itemInput" placeholder="Aggiungi un articolo..." autocomplete="off" enterkeyhint="done">
+        <button id="trashBtn" class="trashTop" type="button" aria-label="Recupera articoli eliminati" title="Cestino">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/></svg>
+        </button>
+        <button id="addBtn" type="button" aria-label="Aggiungi">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 5-5 5 5"/><path d="M12 7v10"/></svg>
+        </button>
+      </div>
+    </section>
+  </main>
+</div>
+
 <div class="trashModal" id="trashModal" aria-hidden="true">
   <div class="trashSheet">
     <div class="trashHead">
@@ -67,6 +108,6 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
