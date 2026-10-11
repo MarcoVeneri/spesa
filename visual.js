@@ -15,6 +15,7 @@
     {k:'carne',r:/\b(carne|pollo|bistecca|hamburger|macinato)\b/i,e:'🥩'},
     {k:'pesce',r:/\b(pesce|tonno|salmone|merluzzo)\b/i,e:'🐟'}
   ];
+
   function decorate(){
     document.querySelectorAll('.swipeRow').forEach(row=>{
       const name=row.querySelector('.itemName');
@@ -22,13 +23,29 @@
       if(!name||!item)return;
       const text=name.textContent.trim();
       const hit=rules.find(x=>x.r.test(text))||{k:'altro',e:'🛒'};
-      row.dataset.kind=hit.k;
+      if(row.dataset.kind!==hit.k)row.dataset.kind=hit.k;
       let art=item.querySelector('.productArt');
-      if(!art){art=document.createElement('span');art.className='productArt';item.insertBefore(art,name)}
-      art.textContent=hit.e;
+      if(!art){
+        art=document.createElement('span');
+        art.className='productArt';
+        item.insertBefore(art,name);
+      }
+      if(art.textContent!==hit.e)art.textContent=hit.e;
     });
   }
+
   const content=document.getElementById('content');
-  if(content)new MutationObserver(decorate).observe(content,{childList:true,subtree:true});
-  decorate();
+  if(content){
+    let scheduled=false;
+    const run=()=>{
+      if(scheduled)return;
+      scheduled=true;
+      requestAnimationFrame(()=>{
+        scheduled=false;
+        decorate();
+      });
+    };
+    new MutationObserver(run).observe(content,{childList:true});
+    run();
+  }
 })();
