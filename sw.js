@@ -1,5 +1,5 @@
-const CACHE='spesa-v22';
-const ASSETS=['./','./index.html','./styles.css?v=22','./app.js?v=22','./manifest.webmanifest','./icon.svg'];
+const CACHE='spesa-v23';
+const ASSETS=['./','./index.html','./styles.css?v=23','./app.js?v=23','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
   self.skipWaiting();
@@ -16,7 +16,7 @@ self.addEventListener('fetch',e=>{
     }).catch(()=>caches.match('./index.html')));
     return;
   }
-  e.respondWith(fetch(e.request).then(r=>{
+  e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{
     const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r;
   }).catch(()=>caches.match(e.request)));
 });
