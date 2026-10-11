@@ -3,7 +3,7 @@ body{padding:max(6px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right
 .shell{width:calc(100vw - 10px);max-width:none;min-height:calc(100dvh - 12px);grid-template-columns:250px minmax(0,1fr);border-radius:26px}
 .sidebar{min-height:calc(100dvh - 12px);padding:28px 20px 22px}.brand{font-size:20px}.navItem{height:50px;font-size:15px}
 .app{padding:36px 38px 112px}
-h1{font-size:clamp(42px,4.4vw,62px)}.subtitle{font-size:16px}
+h1{font-size:clamp(34px,3.8vw,50px)}.subtitle{font-size:16px}
 .shareBtn{width:48px;height:48px}
 .stats{gap:12px;margin-bottom:18px}.statCard{min-height:82px;padding:14px 16px}.statCard strong{font-size:19px}.statCard span{font-size:13px}
 .workspace{grid-template-columns:minmax(0,1fr) 290px;gap:22px}.sideCard{padding:20px}.sideCardTitle{font-size:17px}.sideCardText{font-size:14px}
@@ -16,7 +16,7 @@ h1{font-size:clamp(42px,4.4vw,62px)}.subtitle{font-size:16px}
  .shell{display:block;width:100%;min-height:100dvh;border:0;border-radius:0;box-shadow:none;background:transparent;overflow:visible}
  .sidebar{display:none}
  .app{padding:calc(env(safe-area-inset-top,0px) + 18px) 8px calc(116px + env(safe-area-inset-bottom,0px));min-height:100dvh}
- .top{margin-bottom:16px;padding:0 3px}.top h1{font-size:38px}.subtitle{font-size:15px}.shareBtn{width:44px;height:44px}
+ .top{margin-bottom:16px;padding:0 3px}.top h1{font-size:31px}.subtitle{font-size:15px}.shareBtn{width:44px;height:44px}
  .stats{gap:6px;margin-bottom:14px}.statCard{min-height:70px;padding:9px 5px}.statCard strong{font-size:17px}.statCard span{font-size:11px}
  :root{--row-h:58px}
  .list{border-radius:18px}.item{padding:0 13px}.item:before{width:22px;height:22px;margin-right:12px}.itemName{font-size:18px}.item:after{font-size:16px;margin-left:8px}
