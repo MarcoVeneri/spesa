@@ -1,0 +1,25 @@
+/* Larger, fuller layout requested for better readability */
+body{padding:max(6px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left))}
+.shell{width:calc(100vw - 10px);max-width:none;min-height:calc(100dvh - 12px);grid-template-columns:250px minmax(0,1fr);border-radius:26px}
+.sidebar{min-height:calc(100dvh - 12px);padding:28px 20px 22px}.brand{font-size:20px}.navItem{height:50px;font-size:15px}
+.app{padding:36px 38px 112px}
+h1{font-size:clamp(42px,4.4vw,62px)}.subtitle{font-size:16px}
+.shareBtn{width:48px;height:48px}
+.stats{gap:12px;margin-bottom:18px}.statCard{min-height:82px;padding:14px 16px}.statCard strong{font-size:19px}.statCard span{font-size:13px}
+.workspace{grid-template-columns:minmax(0,1fr) 290px;gap:22px}.sideCard{padding:20px}.sideCardTitle{font-size:17px}.sideCardText{font-size:14px}
+:root{--row-h:54px}
+.item{padding:0 18px}.item:before{width:22px;height:22px;margin-right:13px}.itemName{font-size:18px}.item:after{font-size:17px}
+.list{border-radius:20px}
+.addBox{left:38px;right:38px;bottom:20px;grid-template-columns:minmax(0,1fr) 54px 58px;gap:9px;padding:8px}.addBox input{height:54px;font-size:17px}.addBox button{width:54px;height:54px}.addBox #addBtn{width:58px}
+@media(max-width:760px){
+ body{padding:0}
+ .shell{display:block;width:100%;min-height:100dvh;border:0;border-radius:0;box-shadow:none;background:transparent;overflow:visible}
+ .sidebar{display:none}
+ .app{padding:calc(env(safe-area-inset-top,0px) + 18px) 8px calc(116px + env(safe-area-inset-bottom,0px));min-height:100dvh}
+ .top{margin-bottom:16px;padding:0 3px}.top h1{font-size:38px}.subtitle{font-size:15px}.shareBtn{width:44px;height:44px}
+ .stats{gap:6px;margin-bottom:14px}.statCard{min-height:70px;padding:9px 5px}.statCard strong{font-size:17px}.statCard span{font-size:11px}
+ :root{--row-h:58px}
+ .list{border-radius:18px}.item{padding:0 13px}.item:before{width:22px;height:22px;margin-right:12px}.itemName{font-size:18px}.item:after{font-size:16px;margin-left:8px}
+ .addBox{left:max(6px,env(safe-area-inset-left));right:max(6px,env(safe-area-inset-right));bottom:max(6px,env(safe-area-inset-bottom));grid-template-columns:minmax(0,1fr) 52px 56px;gap:7px;padding:8px;border-radius:19px}
+ .addBox input{height:54px;font-size:17px;padding:0 14px}.addBox button{width:52px;height:54px}.addBox #addBtn{width:56px;height:54px}
+}
