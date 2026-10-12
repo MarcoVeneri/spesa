@@ -1,0 +1,21 @@
+/* Fix ordine colonne barra inserimento: cestino | campo articolo | aggiungi */
+.addBox{
+  grid-template-columns:54px minmax(0,1fr) 58px!important;
+}
+.addBox .trashTop{
+  grid-column:1!important;
+}
+.addBox #itemInput{
+  grid-column:2!important;
+  width:100%!important;
+  min-width:0!important;
+}
+.addBox #addBtn{
+  grid-column:3!important;
+}
+
+@media(max-width:760px){
+  .addBox{
+    grid-template-columns:52px minmax(0,1fr) 56px!important;
+  }
+}
